@@ -287,10 +287,11 @@ def adminhome(request):
   
     start_date = today - timedelta(weeks=1)
     end_date = today
-    order_data = order.objects.filter(date__range=[start_date,end_date ])
+    order_data = order.objects.filter(date__range=[start_date,end_date ],order_status= 'Delivered')
     return_data = return_order.objects.filter(date__range=[start_date,end_date ])
     total = 0
     return_amount = 0
+    print("orderdata",order_data)
     for item in order_data:
         if item.total_amount:
             total = total+  item.total_amount
@@ -319,9 +320,13 @@ def adminhome(request):
  
     top_selling_products_dict = products.objects.in_bulk(top_selling_productsIds)
     top_selling_products = [top_selling_products_dict[id] for id in top_selling_productsIds]
-    print(top_selling_products)
+    brand = brands.objects.all()
+    top_selling_brands = order_items.objects.values('product__brand__logo').annotate(total_sales=Count('id')).order_by('-total_sales')[:10] 
+    print(top_selling_brands)
+    for item in top_selling_brands:
+        print("Top Selling Brand:", item['product__brand__logo'])
     data = {'order_count':order_count,
-                'total':total_value,'bestpro':top_selling_products
+                'total':total_value,'bestpro':top_selling_products,'product_brands':top_selling_brands
                 }
     return render(request,'adminhome1.html',data)
     
@@ -355,7 +360,7 @@ def get_monthly_order_data(request):
 
     # Now, months contains the list of month numbers from January 2024 up to the current month
     monthly_sales_order_count = order.objects.filter( date__year=current_year,
-        date__month__lte=current_month).values('date__month').annotate(order_count=Count('id'))
+        date__month__lte=current_month,order_status= 'Delivered').values('date__month').annotate(order_count=Count('id'))
     print(monthly_sales_order_count)
 
     monthdata = []
@@ -373,7 +378,7 @@ def get_monthly_order_data(request):
     
     # for line chart
     linechartMonthData = []
-    monthly_totals = order.objects.annotate(month=ExtractMonth('date')).values('month').annotate(total_amount=Sum('total_amount'))
+    monthly_totals = order.objects.annotate(month=ExtractMonth('date')).filter(order_status= 'Delivered').values('month').annotate(total_amount=Sum('total_amount'))
     for i in reversed(monthly_totals):
         linechartMonthData.append(float(i['total_amount']))
 
@@ -415,7 +420,7 @@ def changeChartData(request):
 
         # Now, months contains the list of month numbers from January 2024 up to the current month
         monthly_sales_order_count = order.objects.filter( date__year=current_year,
-            date__month__lte=current_month).values('date__month').annotate(order_count=Count('id'))
+            date__month__lte=current_month,order_status= 'Delivered').values('date__month').annotate(order_count=Count('id'))
         print(monthly_sales_order_count)
 
         monthdata = []
@@ -502,7 +507,7 @@ def changeChartData(request):
         for year in range(start_year, end_year + 1):
             # Aggregate data for the year
             yearly_sales_order_count = order.objects.filter(
-                date__year=year).values('date__year').annotate(
+                date__year=year,order_status= 'Delivered').values('date__year').annotate(
                 order_count=Count('id'),total_amount=Sum('total_amount')).order_by('date__year')
 
             # Extract data for the year
