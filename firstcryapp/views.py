@@ -82,7 +82,6 @@ def pwd_verify_otp(request):
         generated_otp = request.session.get('generated_otp')
         email = request.session.get('email')
         if submitted_otp == generated_otp:
-            print(email)
             return render(request, 'resetpwd.html',{'email' :email})
         
         messages.error(request, "Invalid OTP")
@@ -102,7 +101,7 @@ def request_otp(request):
         valid=is_valid_email(email)
         if valid:
             user = User.objects.all().filter(email=email)
-# forgot Password goes here --------------------------
+#Senting OTP for forgot Password goes here --------------------------
             if 'forgot' in request.POST:
                 val = 1
                 if user:
@@ -129,7 +128,7 @@ def request_otp(request):
             
             else:
                 val = 0
-# For senting OTP for registeration
+# For senting OTP for registeration-----------------------------------------------
                 if user:
                     messages.info(request,'Your are already Registered with Us')
                     return render(request, 'for_otp.html')
@@ -175,7 +174,6 @@ def verify_otp(request):
         email = request.session.get('email')
         if submitted_otp == generated_otp:
             return render(request, 'register.html',{'email' :email})
-        
         messages.error(request, "Invalid OTP")
         return render(request, 'otp_verify.html', {'error': 'Invalid OTP'})
     return render(request, 'otp_verify.html')
