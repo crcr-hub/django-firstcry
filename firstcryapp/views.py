@@ -15,8 +15,7 @@ from django.views.decorators.cache import cache_control
 from django.contrib.auth import authenticate, login, logout 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+
 from datetime import datetime, timedelta
 from django.db.models.functions import TruncMonth
 from django.contrib.auth.views import LoginView
