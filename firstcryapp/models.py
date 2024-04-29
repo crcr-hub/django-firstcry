@@ -12,6 +12,7 @@ from django.contrib.auth.base_user import AbstractBaseUser,BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.utils import timezone
 from django.utils.html import mark_safe
+from django.contrib.sessions.models import Session
 
 
 class NonDeleted(models.Manager):
@@ -175,6 +176,9 @@ order_status_choices = [
     ('7', 'Cancelled by Admin')
 ]
 
+
+
+
 class coupon(models.Model):
     name = models.CharField(max_length=10,null=True,blank=True)
     description = models.CharField(max_length=200,null=True,blank=True)
@@ -183,6 +187,9 @@ class coupon(models.Model):
     start_date = models.DateField(blank=True,null=True)
     end_date = models.DateField(null=True,blank=True)
 
+
+
+    
 # Address------------------------------------
 class address(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
@@ -248,29 +255,6 @@ class return_order(models.Model):
 #     size = models.CharField(max_length=100,null=True,blank=True)
 #     quantity = models.IntegerField(default=0)
 #     stock_status = models.BooleanField(default=False)
-
-
-
-
- 
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
 
 
 

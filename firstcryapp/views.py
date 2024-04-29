@@ -216,8 +216,10 @@ def registration(request):
 
 def user_login(request):
     if request.method == 'POST':
+        print("helooooo")
         email = request.POST['email']
         password = request.POST['password']
+        print(email)
         valid=is_valid_email(email)
         if valid:
             user = authenticate(email=email,password=password)
@@ -227,6 +229,7 @@ def user_login(request):
                 ban = user.ban_status
                 if user.is_staff:
                     request.session['email'] = email
+                    print(request.session['email'])
                     return redirect(adminhome)
                 if ban:
                     messages.info(request,'You are banned to access please contact administator')
