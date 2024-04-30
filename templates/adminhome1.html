@@ -456,21 +456,22 @@
               <div class="col-md-7 grid-margin stretch-card">
                 <div class="card">
                   <div class="card-body">
-                    <h4 class="card-title">Project Status</h4>
+                    <h4 class="card-title">Best Selling Category</h4>
                     <div class="table-responsive">
                       <table class="table">
                         <thead>
                           <tr>
                             <th> # </th>
-                            <th> Name </th>
-                            <th> Due Date </th>
+                            <th> Titile </th>
+                            <th> Description </th>
                             <th> Progress </th>
                           </tr>
                         </thead>
                         <tbody>
+                          {% for items in topcateg %}
                           <tr>
                             <td> 1 </td>
-                            <td> Herman Beck </td>
+                            <td> {{items}} </td>
                             <td> May 15, 2015 </td>
                             <td>
                               <div class="progress">

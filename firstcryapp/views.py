@@ -298,10 +298,7 @@ def adminhome(request):
         if item.total_amount:
             total = total+  item.total_amount
 
-    for item in return_data:
-        if item.order.total_amount:
-            return_amount = return_amount + item.order.total_amount
-    total_value = total - return_amount
+
     order_count = order_data.count()
     # testing for correct count  
     top_selling_products_with_count = order_items.objects.values('product_id') \
@@ -324,11 +321,12 @@ def adminhome(request):
     top_selling_products = [top_selling_products_dict[id] for id in top_selling_productsIds]
     brand = brands.objects.all()
     top_selling_brands = order_items.objects.values('product__brand__logo').annotate(total_sales=Count('id')).order_by('-total_sales')[:10] 
-    print(top_selling_brands)
+    top_selling_category = order_items.objects.values('product__category__titile').annotate(total_sales=Count('id')).order_by('-total_sales')[:10]
     for item in top_selling_brands:
         print("Top Selling Brand:", item['product__brand__logo'])
     data = {'order_count':order_count,
-                'total':total,'bestpro':top_selling_products,'product_brands':top_selling_brands
+                'total':total,'bestpro':top_selling_products,'product_brands':top_selling_brands,
+                'topcateg':top_selling_category,
                 }
     return render(request,'adminhome1.html',data)
     
