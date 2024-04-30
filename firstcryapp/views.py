@@ -321,7 +321,7 @@ def adminhome(request):
     top_selling_products = [top_selling_products_dict[id] for id in top_selling_productsIds]
     brand = brands.objects.all()
     top_selling_brands = order_items.objects.values('product__brand__logo').annotate(total_sales=Count('id')).order_by('-total_sales')[:10] 
-    top_selling_category = order_items.objects.values('product__category__titile').annotate(total_sales=Count('id')).order_by('-total_sales')[:10]
+    top_selling_category = order_items.objects.values('product__category__titile','product__category__description').annotate(total_sales=Count('id')).order_by('-total_sales')[:10]
     for item in top_selling_brands:
         print("Top Selling Brand:", item['product__brand__logo'])
     data = {'order_count':order_count,
