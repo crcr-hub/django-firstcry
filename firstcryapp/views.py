@@ -42,7 +42,6 @@ class CustomLoginView(LoginView):
 
 def detailedpage(request,pk):
     details = products.objects.all().filter(category=pk)
-    print(details)
     return render(request,'selectproductnotLogin.html',{'details':details})
 
 def first(request):
@@ -328,7 +327,7 @@ def adminhome(request):
     for item in top_selling_brands:
         print("Top Selling Brand:", item['product__brand__logo'])
     data = {'order_count':order_count,
-                'total':total_value,'bestpro':top_selling_products,'product_brands':top_selling_brands
+                'total':total,'bestpro':top_selling_products,'product_brands':top_selling_brands
                 }
     return render(request,'adminhome1.html',data)
     
@@ -1369,7 +1368,7 @@ def selectoneproduct(request,pk):
         wish = whishlist.objects.all().filter(product=pk,user=userid,size=size)
         car = cart.objects.all().filter(product=pk,user=userid,size=size) # for goto cart button
         
-        print("thishs sixe",size)
+   
         if size:
             default = size
         else:
@@ -1412,8 +1411,6 @@ def selectoneproduct(request,pk):
             if hasattr(variation,list(request.POST.keys())[1]):
                 print("yes")
                 default = (list(request.POST.keys())[1])
-        print(default)
-
         return render(request,'oneprodwithlogin.html',{'details':details,'wish':wishlist,'cart':cartdata,'default':default})
     return redirect(user_login)
 
