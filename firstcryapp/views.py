@@ -1273,13 +1273,10 @@ def detailpage(request,pk):
         
         types = categories.objects.get(id = pk)
         cattype = ''
-        print(types)
-
         details = products.objects.all().filter(category=pk).order_by('-id')
         wishli = whishlist.objects.all().filter(user_id=uid)
  
         cattype = types.type
-        print(cattype)
         boyscategory1 =categories.objects.all().filter(gender="Boys").order_by('-id')
         
         if cattype == '1':
