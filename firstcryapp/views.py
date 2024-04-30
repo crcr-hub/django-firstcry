@@ -328,7 +328,7 @@ def adminhome(request):
     for item in top_selling_brands:
         print("Top Selling Brand:", item['product__brand__logo'])
     data = {'order_count':order_count,
-                'total':total_value,'bestpro':top_selling_products,'product_brands':top_selling_brands
+                'total':total,'bestpro':top_selling_products,'product_brands':top_selling_brands
                 }
     return render(request,'adminhome1.html',data)
     
@@ -1277,7 +1277,6 @@ def detailpage(request,pk):
         wishli = whishlist.objects.all().filter(user_id=uid)
  
         cattype = types.type
-        print(cattype)
         boyscategory1 =categories.objects.all().filter(gender="Boys").order_by('-id')
         
         if cattype == '1':
