@@ -1823,6 +1823,8 @@ def add_coupon(request):
             sdate = request.POST.get('sdate')
             if request.POST.get('mamount'):
                 mamount = request.POST.get('mamount')
+            else:
+                mamount = 0
             cop = coupon()
             cop.name = name
             cop.description = description
