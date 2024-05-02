@@ -368,22 +368,15 @@ def get_monthly_order_data(request):
         monthdata.insert(0,i['order_count'])
     
     monthdata.reverse() 
-    print(monthdata)
-   
     length_difference = len(monthsnum) - len(monthdata)
     monthdata.extend([0] * length_difference)
     monthdata.reverse() 
-    print(monthdata)
-
-    
     # for line chart
     linechartMonthData = []
     monthly_totals = order.objects.annotate(month=ExtractMonth('date')).filter(order_status= 'Delivered').values('month').annotate(total_amount=Sum('total_amount'))
     for i in reversed(monthly_totals):
         linechartMonthData.append(float(i['total_amount']))
 
-    
-    
     months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     month_names = [months[number - 1] for number in monthsnum]
     
@@ -391,7 +384,6 @@ def get_monthly_order_data(request):
     linechartMonthData.extend([0] * l_difference)
    
     linechartMonthData.reverse() 
-    print(linechartMonthData) 
     return JsonResponse({'label':month_names,'varibles':monthdata,'ldata':linechartMonthData}, safe=False)
 
 #changing chart data
@@ -1829,7 +1821,8 @@ def add_coupon(request):
             discount = request.POST.get('discount')
             edate = request.POST.get('edate')
             sdate = request.POST.get('sdate')
-            mamount = request.POST.get('mamount')
+            if request.POST.get('mamount'):
+                mamount = request.POST.get('mamount')
             cop = coupon()
             cop.name = name
             cop.description = description
