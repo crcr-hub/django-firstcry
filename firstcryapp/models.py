@@ -186,6 +186,7 @@ class coupon(models.Model):
     min_amount = models.IntegerField(default=0)
     start_date = models.DateField(blank=True,null=True)
     end_date = models.DateField(null=True,blank=True)
+ 
 
 
 
