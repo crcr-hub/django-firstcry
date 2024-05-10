@@ -55,7 +55,7 @@ $(document).ready(function() {
        const data = {
           labels: lab,
           datasets: [{
-              label: 'Monthly Data',
+              label: 'Monthly Sales',
               backgroundColor: 'rgba(75, 192, 192, 0.2)',
               borderColor: 'rgba(75, 192, 192, 1)',
               borderWidth: 1,
@@ -90,13 +90,13 @@ document.getElementById('changing_chart_data').addEventListener('change', functi
     console.log(selectedOption)
     var name = ""
     if (selectedOption == "week"){
-        name = "Weekly data"
+        name = "Weekly "
     }
     else if (selectedOption == "month"){
-        name = "Monthly Data"
+        name = "Monthly "
     }
     else{
-        name = "Yearly Data"
+        name = "Yearly "
     }
 
     $.ajax({
@@ -114,7 +114,7 @@ document.getElementById('changing_chart_data').addEventListener('change', functi
             const data = {
                 labels: labels,
                 datasets: [{
-                    label: name,
+                    label: name+'Sales',
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1,
@@ -124,7 +124,7 @@ document.getElementById('changing_chart_data').addEventListener('change', functi
             const data1 = {
                 labels: labels,
                 datasets: [{
-                    label: name,
+                    label: name+'Revenue',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 2,
                     fill: false,
