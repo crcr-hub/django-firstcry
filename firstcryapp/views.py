@@ -290,7 +290,7 @@ def adminhome(request):
   
     start_date = today - timedelta(days=today.weekday() + 7)
     end_date = datetime.combine(today, datetime.max.time())
-    order_data = order.objects.filter(date__range=[start_date,end_date ],order_status= 'Delivered')
+    order_data = order.objects.filter(order_status= 'Delivered')
     return_data = return_order.objects.filter(date__range=[start_date,end_date ])
     total = 0
     return_amount = 0
