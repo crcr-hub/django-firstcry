@@ -2259,9 +2259,7 @@ def downloading_page(request):
         return render(request,'admin_sales_report.html')
 
 
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Image
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
+
 
 
 def salesReport_pdf(request):
@@ -2316,7 +2314,7 @@ def salesReport_pdf(request):
 
             response = HttpResponse(content_type='application/pdf')
 
-            response['Content-Disposition'] = 'attachment; filename="products_report.pdf"'
+            response['Content-Disposition'] = ' filename="Sales_report.pdf"'
 
             template = get_template(template_path)
 
@@ -2333,7 +2331,7 @@ def salesReport_pdf(request):
         
     else:
         if request.POST.get('details') == 'order':
-            queryset = order.objects.filter(date__range=[start_date, end_date]).order_by('-id')
+            queryset = order.objects.filter(date__range=[start_date, end_date])
             data = ['Order ID', 'Customer ID', 'Customer Email', 'Total Amount','Payment Method','Date']
         else:
             queryset =  order_items.objects.filter(order__date__range=[start_date, end_date]).order_by('-order_id')
@@ -2384,56 +2382,6 @@ def salesReport_pdf(request):
 
 
 
-    if 'email' in request.session:
-        today = datetime.now().date()
-
-        # Determine start and end dates based on selected period
-        if request.POST.get('period') == 'oneday':
-            start_date = today - timedelta(days=1)
-            end_date = today
-        elif request.POST.get('period') == 'weekly':
-            start_date = today - timedelta(weeks=1)
-            end_date = today
-        elif request.POST.get('period') == 'month':
-            start_date = today.replace(day=1)
-            end_date = today
-        else:
-            start_date = today - timedelta(days=180)
-            end_date = today
-
-        # Filter orders based on the date range
-        queryset = order.objects.filter(date__range=[start_date, end_date])
-
-        # Create an in-memory Excel file
-        output = io.BytesIO()
-        workbook = xlsxwriter.Workbook(output)
-        worksheet = workbook.add_worksheet()
-
-        # Write headers
-        headers = ['Order ID', 'Customer', 'Total Amount', 'Date']
-        for col, header in enumerate(headers):
-            worksheet.write(0, col, header)
-
-        # Write data
-        row = 1
-        for item in queryset:
-            worksheet.write(row, 0, item.id)
-            worksheet.write(row, 1, item.user.first_name)
-            worksheet.write(row, 2, item.total_amount)
-            worksheet.write(row, 3, item.date.strftime('%Y-%m-%d'))  # Format date as needed
-            row += 1
-
-        workbook.close()
-
-        # Set response headers to force file download
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename="sales_Report.xlsx"'
-        output.seek(0)
-        response.write(output.read())
-        return response
-    else:
-        # Handle case where user is not logged in or session does not exist
-        return HttpResponse("Unauthorized", status=401)
 
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
