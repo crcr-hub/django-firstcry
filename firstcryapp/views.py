@@ -393,7 +393,6 @@ def get_monthly_order_data(request):
 @login_required(login_url='user_login')
 def changeChartData(request):
     value = request.GET.get('value')
-    print("this value",value)
     if value == 'month':
         current_year = datetime.now().year
         current_month = datetime.now().month
@@ -414,7 +413,6 @@ def changeChartData(request):
         # Now, months contains the list of month numbers from January 2024 up to the current month
         monthly_sales_order_count = order.objects.filter( date__year=current_year,
             date__month__lte=current_month,order_status= 'Delivered').values('date__month').annotate(order_count=Count('id'))
-        print(monthly_sales_order_count)
 
         monthdata = []
         for i in reversed(monthly_sales_order_count):
@@ -463,7 +461,7 @@ def changeChartData(request):
         while week_start < end_date:
             # Aggregate data for the week
             weekly_data = order.objects.filter(
-                date__range=[week_start, week_end]
+                date__range=[week_start, week_end],order_status= 'Delivered'
             ).aggregate(
             order_count=Count('id'),
             total_amount=Sum('total_amount') )
