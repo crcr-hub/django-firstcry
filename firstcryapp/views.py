@@ -1300,11 +1300,8 @@ def filter_data(request):
         offer_price = request.POST.getlist('Offer_price[]')
         length = request.POST.getlist('length[]')
         size = request.POST.getlist('size[]')
-        print(size)
         prices = []
         num = ""
-        print(type(ctype))
-
         combined_filter = Q()
         if len(ctype)>0:
             allproduct = allproduct.filter(necktype__in = ctype)
@@ -1336,9 +1333,6 @@ def filter_data(request):
             #         f"varient__{size}__gt": 0
             #         }
                 allproduct = allproduct.filter(combined_filter)
-        print(allproduct)
-        print(prices)
-       
         t=render_to_string('detailed_filter.html',{'data':allproduct}, request=request)
       
         return JsonResponse({'data':t})
