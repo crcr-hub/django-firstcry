@@ -995,7 +995,6 @@ def productupdation(request,pk):
                 instance.deal = request.POST.get('deal')
                 instance.Offer_price =request.POST.get('offer')
                 instance.save()
-                print("saved")
                 print(request.POST)
                 return redirect(showproduct)
         else:
@@ -1193,7 +1192,6 @@ def view_order(request):
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def orderDetails(request,pk):
-    print("ok")
     if 'email' in request.session:
         ord = order.objects.get(id=pk)
         orders = order_items.objects.filter(order=ord)
@@ -2320,7 +2318,6 @@ def salesReport_pdf(request):
         else:
             ord_items = order_items.objects.filter(order__date__range=[start_date, end_date]).order_by('-order_id')
             ord_items_with_index = [(index + 1, item) for index, item in enumerate(ord_items)]
-            print(ord_items_with_index)
             template_path = 'sales_report_alldata.html'
 
             context = {'ord_indx':ord_items_with_index}
