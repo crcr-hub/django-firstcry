@@ -1,0 +1,68 @@
+<!-- invoice_template.html -->
+{%load static%}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sales Report</title>
+    <style>
+        /* Add your CSS styles for the invoice here */
+        /* Example styles */
+        .head {
+            height: 100px;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            width: 150px;
+           
+        }
+        .table td, .table th{
+            height: 40px;
+            text-align: center; 
+            vertical-align: middle;
+            border: solid 1px black;
+        }
+    </style>
+</head>
+<body>
+
+
+         <table class="table">
+            <tr>
+                <th style="width: 40px;">No.</th>
+                <th >Order ID</th>
+                <th >Customer ID</th>
+              
+                <th> Product ID</th>
+                <th>Size</th>
+                <th style="width: 50px;" >Quantity</th>
+               <th>Total Amount</th>
+               <th style="width: 120px;"> Date</th>
+            </tr>
+           
+            {%  for index, item in ord_indx %}
+            <tr>
+                <td>{{ index }}</td>
+                <td> {{item.order.id}} 
+                </td>
+           
+                <td>{{item.order.user.id}}</td>
+                <td>{{item.product.id}}</td>
+                <td>{{item.size}}</td>
+                <td>{{item.quantity}}</td>
+                <td>{{item.total}}</td>
+                <td>{{item.order.date}}</td>
+            </tr>
+            {%endfor%}
+         </table>
+         
+ <div style="margin-top: 50px;">-----
+    ------------------------
+    --------------------------------------
+--------------------------------------------------
+--------------------------------------------
+----------------------------------------</div>
+            
+
+ 
+</body>
+</html>

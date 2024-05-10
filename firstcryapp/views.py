@@ -27,6 +27,7 @@ from dateutil.relativedelta import relativedelta
 from django.template.loader import get_template
 
 from xhtml2pdf import pisa
+import io
 
 
 
@@ -287,8 +288,8 @@ def adminhome(request):
     #start_date = end_date - timedelta(days=7)
     #print(start_date)
   
-    start_date = today - timedelta(weeks=1)
-    end_date = today
+    start_date = today - timedelta(days=today.weekday() + 7)
+    end_date = datetime.combine(today, datetime.max.time())
     order_data = order.objects.filter(date__range=[start_date,end_date ],order_status= 'Delivered')
     return_data = return_order.objects.filter(date__range=[start_date,end_date ])
     total = 0
@@ -2268,132 +2269,132 @@ def downloading_page(request):
         return render(request,'admin_sales_report.html')
 
 
-@user_passes_test(lambda u: u.is_staff)
-@login_required(login_url='user_login') 
-def generate_pdf(request):
-    if 'email' in request.session:
-        # Query data from your databasew
-        today = datetime.now().date()
-        if request.POST.get('period') == 'oneday':
-            start_date = today - timedelta(days=1)
-            end_date = today
-        elif request.POST.get('period') == 'weekly':
-            start_date = today - timedelta(weeks=1)
-            end_date = today
-        elif request.POST.get('period') == 'lmonth':
-            start_date = today.replace(day=1)
-            print(start_date)
-            end_date = today
-        elif request.POST.get('period') == 'pmonth':
-            start_date =(today.replace(day=1) - timedelta(days=1)).replace(day=1)
-            print(start_date)
-            end_date = today.replace(day=1)- timedelta(days=1)
-            print(end_date)
-        elif request.POST.get('period') == '6month':
-            start_date = today - timedelta(days=180)
-            end_date = today
-        elif request.POST.get('period') == 'year':
-            start_date = today - relativedelta(years=1)
-            end_date = today
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Image
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
 
-     
-        # Filter data from your database based on the date range
+
+def salesReport_pdf(request):
+    today = datetime.now().date()
+    if request.POST.get('period') == 'oneday':
+        start_date = today - timedelta(days=1)
+        end_date = today
+    elif request.POST.get('period') == 'weekly':
+        start_date = today - timedelta(weeks=1)
+        end_date = today
+    elif request.POST.get('period') == 'lmonth':
+        start_date = today.replace(day=1)
+        end_date = today
+    elif request.POST.get('period') == 'pmonth':
+        start_date =(today.replace(day=1) - timedelta(days=1)).replace(day=1)
+        end_date = today.replace(day=1)- timedelta(days=1)
+    elif request.POST.get('period') == '6month':
+        start_date = today - timedelta(days=180)
+        end_date = today
+    elif request.POST.get('period') == 'year':
+        start_date = today - relativedelta(years=1)
+        end_date = today
+    if 'pdf' in request.POST:
         if request.POST.get('details') == 'order':
-            queryset = order.objects.filter(date__range=[start_date, end_date]).order_by('-id')
-            print(queryset)
-            if 'pdf' in request.POST:
-                data = [['Order ID', 'Customer ID', 'Customer Email', 'Total Amount','Payment Method','Date']]
-            else:
-                data = ['Order ID', 'Customer ID', 'Customer Email', 'Total Amount','Payment Method','Date']
-          
-            
-        else:
-            queryset =  order_items.objects.filter(order__date__range=[start_date, end_date]).order_by('-order_id')
-            print(queryset)
-            if 'pdf' in request.POST:
-                 data = [['Order ID', 'Customer Email', 'Product ID','Size','Quantity','Total Amount','Date']]
-            else:
-                data = ['Order ID', 'Customer Email', 'Product','Size','Quantity','Total Amount','Date']
-          
-     
-       
-        if 'pdf' in request.POST:
-            # Populate table data with database records
-            if request.POST.get('details') == 'order':
-                for item in queryset:
-                    data.append([item.id, item.user.id,item.user.email, item.total_amount,item.payment_method,item.date])  # Add data from each database record
-            else:
-                for item in queryset:
-                    data.append([item.id, item.order.user.email,item.product.id, item.size,item.quantity,item.total,item.order.date])  # Add data from each database record
-          
+            ord_items = order.objects.filter(date__range=[start_date, end_date]).order_by('-id')
+            ord_items_with_index = [(index + 1, item) for index, item in enumerate(ord_items)]
+            template_path = 'sales_report.html'
 
-            # Create a PDF document
+            context = {'ord_indx':ord_items_with_index}
+
             response = HttpResponse(content_type='application/pdf')
-            response['Content-Disposition'] = 'attachment; filename="sales_Report.pdf"'
 
-            # Create a PDF document
-            doc = SimpleDocTemplate(response, pagesize=letter)
+            response['Content-Disposition'] = 'attachment; filename="products_report.pdf"'
 
-            # Create a table and specify style
-            table = Table(data)
-            table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), (0.9, 0.9, 0.9)),  # Header row background color
-                ('TEXTCOLOR', (0, 0), (-1, 0), (0, 0, 0)),         # Header row text color
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),             # Alignment of content
-                ('GRID', (0, 0), (-1, -1), 1, (0, 0, 0)),          # Border around cells
-            ]))
+            template = get_template(template_path)
 
-            # Add table to the PDF document
-            doc.build([table])
+            html = template.render(context)
 
+            # create a pdf
+            pisa_status = pisa.CreatePDF(
+            html, dest=response)
+            # if error then show some funy view
+            if pisa_status.err:
+                return HttpResponse('We had some errors <pre>' + html + '</pre>')
             return response
         else:
-            output = io.BytesIO()
-            workbook = xlsxwriter.Workbook(output)
-            worksheet = workbook.add_worksheet()
+            ord_items = order_items.objects.filter(order__date__range=[start_date, end_date]).order_by('-order_id')
+            ord_items_with_index = [(index + 1, item) for index, item in enumerate(ord_items)]
+            print(ord_items_with_index)
+            template_path = 'sales_report_alldata.html'
+
+            context = {'ord_indx':ord_items_with_index}
+
+            response = HttpResponse(content_type='application/pdf')
+
+            response['Content-Disposition'] = 'attachment; filename="products_report.pdf"'
+
+            template = get_template(template_path)
+
+            html = template.render(context)
+
+            # create a pdf
+            pisa_status = pisa.CreatePDF(
+            html, dest=response)
+            # if error then show some funy view
+            if pisa_status.err:
+                return HttpResponse('We had some errors <pre>' + html + '</pre>')
+            return response
+
+        
+    else:
+        if request.POST.get('details') == 'order':
+            queryset = order.objects.filter(date__range=[start_date, end_date]).order_by('-id')
+            data = ['Order ID', 'Customer ID', 'Customer Email', 'Total Amount','Payment Method','Date']
+        else:
+            queryset =  order_items.objects.filter(order__date__range=[start_date, end_date]).order_by('-order_id')
+            data = ['Order ID', 'Customer Email', 'Product','Size','Quantity','Total Amount','Date']
+
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output)
+        worksheet = workbook.add_worksheet()
 
             # Write headers
             #headers = ['Order ID', 'Customer', 'Total Amount', 'Date']
-            for col, header in enumerate(data):
-                worksheet.write(0, col, header)
+        for col, header in enumerate(data):
+            worksheet.write(0, col, header)
 
             # Write data
-            if request.POST.get('details') == 'order':
-                row = 1
-                for item in queryset:
-                    worksheet.write(row, 0, item.id)
-                    worksheet.write(row, 1, item.user.id)
-                    worksheet.write(row, 2, item.user.email)
-                    worksheet.write(row, 3, item.total_amount)
-                    worksheet.write(row, 4, item.payment_method)
-                    worksheet.write(row, 5, item.date.strftime('%Y-%m-%d %H:%M:%S'))  # Format date as needed
-                    row += 1
-            else:
-                row = 1
-                for item in queryset:
-                    worksheet.write(row, 0, item.order.id)
-                    worksheet.write(row, 1, item.order.user.email)
-                    worksheet.write(row, 2, item.product.name)
-                    worksheet.write(row, 3, item.size)
-                    worksheet.write(row, 4, item.quantity)
-                    worksheet.write(row, 5, item.total)
-                    worksheet.write(row, 6, item.order.date.strftime('%Y-%m-%d %H:%M:%S'))  # Format date as needed
-                    row += 1
+        if request.POST.get('details') == 'order':
+            row = 1
+            for item in queryset:
+                worksheet.write(row, 0, item.id)
+                worksheet.write(row, 1, item.user.id)
+                worksheet.write(row, 2, item.user.email)
+                worksheet.write(row, 3, item.total_amount)
+                worksheet.write(row, 4, item.payment_method)
+                worksheet.write(row, 5, item.date.strftime('%Y-%m-%d %H:%M:%S'))  # Format date as needed
+                row += 1
+        else:
+            row = 1
+            for item in queryset:
+                worksheet.write(row, 0, item.order.id)
+                worksheet.write(row, 1, item.order.user.email)
+                worksheet.write(row, 2, item.product.name)
+                worksheet.write(row, 3, item.size)
+                worksheet.write(row, 4, item.quantity)
+                worksheet.write(row, 5, item.total)
+                worksheet.write(row, 6, item.order.date.strftime('%Y-%m-%d %H:%M:%S'))  # Format date as needed
+                row += 1
 
-            workbook.close()
+        workbook.close()
 
             # Set response headers to force file download
-            response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            response['Content-Disposition'] = 'attachment; filename="sales_Report.xlsx"'
-            output.seek(0)
-            response.write(output.read())
-            return response
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="sales_Report.xlsx"'
+        output.seek(0)
+        response.write(output.read())
+        return response
+        
 
 
-import io
-@user_passes_test(lambda u: u.is_staff)
-@login_required(login_url='user_login')
-def generate_excel(request):
+
+
     if 'email' in request.session:
         today = datetime.now().date()
 
@@ -2454,36 +2455,40 @@ def listSales(request):
         print(request.GET.get('details'))
         
         if request.GET.get('period') == 'oneday':
-            start_date = today - timedelta(days=1)
-            end_date = today
+            start_date = datetime.combine(today, datetime.min.time())
+            end_date = datetime.combine(today, datetime.max.time())
         elif request.GET.get('period') == 'weekly':
             start_date = today - timedelta(weeks=1)
-            end_date = today
+            end_date = datetime.combine(today, datetime.max.time())
         elif request.GET.get('period') == 'lmonth':
             start_date = today.replace(day=1)
-            print(start_date)
-            end_date = today
+            end_date = datetime.combine(today, datetime.max.time())
         elif request.GET.get('period') == 'pmonth':
             start_date =(today.replace(day=1) - timedelta(days=1)).replace(day=1)
-            print(start_date)
+         
             end_date = today.replace(day=1)- timedelta(days=1)
-            print(end_date)
+      
         elif request.GET.get('period') == '6month':
             start_date = today - timedelta(days=180)
             end_date = today
         elif request.GET.get('period') == 'year':
             start_date = today - relativedelta(years=1)
             end_date = today
+
         
-        ord = order.objects.filter(date__range=[start_date, end_date]).order_by('-id')
         orddtl = order_items.objects.filter(order__date__range=[start_date, end_date]).order_by('-order_id')
+    
         if request.GET.get('details') == 'order':
-            details= ord
+            print("start date",start_date)
+            print("End date",end_date)
+        
+            details=  order.objects.filter(date__range=(start_date, end_date))
             type = 1
             
         else:
             details = orddtl
             type = 2
+        print("details",details)
         return render(request, 'list_sales.html', {'dd':details,'type':type}) 
 
 

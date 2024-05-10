@@ -177,8 +177,6 @@ order_status_choices = [
 ]
 
 
-
-
 class coupon(models.Model):
     name = models.CharField(max_length=10,null=True,blank=True)
     description = models.CharField(max_length=200,null=True,blank=True)

@@ -64,9 +64,7 @@ urlpatterns = [
     path('edit_brand_page/<pk>',views.edit_brand_page,name='edit_brand_page'),
     path('add_brand_js',views.add_brand_js,name='add_brand_js'),
     path('update_brand/<pk>/',views.update_brand,name='update_brand'),
-    path('generate_pdf/',views.generate_pdf,name='generate_pdf'),
     path('downloading_page',views.downloading_page,name='downloading_page'),
-    path('generate_excel',views.generate_excel,name='generate_excel'),
     path('listSales',views.listSales,name='listSales'),
     path('show_coupon',views.show_coupon,name='show_coupon'),
     path('add_coupon_page',views.add_coupon_page,name='add_coupon_page'),
@@ -75,6 +73,7 @@ urlpatterns = [
     path('update_coupon/<pk>',views.update_coupon,name='update_coupon'),
     path('delete_coupon/<pk>',views.delete_coupon,name='delete_coupon'),
     path('admin_cancelOrder',views.admin_cancelOrder,name='admin_cancelOrder'),
+    path('salesReport_pdf',views.salesReport_pdf,name='salesReport_pdf'),
 
     # User URL-------------------------------
 

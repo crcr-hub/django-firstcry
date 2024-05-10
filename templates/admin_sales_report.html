@@ -293,7 +293,7 @@
                     <h4 class="card-title">Download Sales Report</h4>
                     <p class="card-description">
                     </p>
-                    <form action="{% url 'generate_pdf' %}" method="post">
+                    <form action="{% url 'salesReport_pdf' %}" method="post">
                         {%csrf_token%}
                         <div class="form-group" id = "load_brand" style="width: 100%; display: flex;">
                                   <div style="width: 300px;">

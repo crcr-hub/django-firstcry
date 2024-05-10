@@ -25,8 +25,9 @@ SECRET_KEY = 'django-insecure-osiu#r*5(g!yrp3$sz-fu1wvx73d@7k=0be)4^6-ap7*=%)bfv
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+ALLOWED_HOSTS = []
 
-ALLOWED_HOSTS = ['198.211.99.20', 'localhost', '127.0.0.1','13.51.199.47']
+# ALLOWED_HOSTS = ['198.211.99.20', 'localhost', '127.0.0.1','13.51.199.47']
 
 
 # Application definition
@@ -77,27 +78,27 @@ WSGI_APPLICATION = 'firstcry.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'project_firstcry',
-#         'USER' : 'postgres',
-#         'PASSWORD' : 'raijo',
-#         'HOST' : 'localhost',
-#         'PORT' : '5432'
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'firstcry',
-        'USER': 'superuser',
-        'PASSWORD': 'superuser',
-        'HOST': 'firstcrydb.cte48u6cuzjl.eu-north-1.rds.amazonaws.com',
-        'PORT': '5432',
+        'NAME': 'project_firstcry',
+        'USER' : 'postgres',
+        'PASSWORD' : 'raijo',
+        'HOST' : 'localhost',
+        'PORT' : '5432'
     }
 }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'firstcry',
+#         'USER': 'superuser',
+#         'PASSWORD': 'superuser',
+#         'HOST': 'firstcrydb.cte48u6cuzjl.eu-north-1.rds.amazonaws.com',
+#         'PORT': '5432',
+#     }
+# }
 
 
 # Password validation

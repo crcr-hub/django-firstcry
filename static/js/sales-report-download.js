@@ -8,7 +8,7 @@ $(document).ready(function(){
         console.log(name)
         console.log(times)
         $.ajax({
-            url:  'generate_pdf/',
+            url:  'salesReport_pdf',
             type: 'POST',
             data: {
                 'details': name,
