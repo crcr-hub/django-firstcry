@@ -2266,22 +2266,22 @@ def salesReport_pdf(request):
     today = datetime.now().date()
     if request.POST.get('period') == 'oneday':
         start_date = today - timedelta(days=1)
-        end_date = today
+        end_date = datetime.combine(today, datetime.max.time())
     elif request.POST.get('period') == 'weekly':
         start_date = today - timedelta(weeks=1)
-        end_date = today
+        end_date = datetime.combine(today, datetime.max.time())
     elif request.POST.get('period') == 'lmonth':
         start_date = today.replace(day=1)
-        end_date = today
+        end_date = datetime.combine(today, datetime.max.time())
     elif request.POST.get('period') == 'pmonth':
         start_date =(today.replace(day=1) - timedelta(days=1)).replace(day=1)
         end_date = today.replace(day=1)- timedelta(days=1)
     elif request.POST.get('period') == '6month':
         start_date = today - timedelta(days=180)
-        end_date = today
+        end_date = datetime.combine(today, datetime.max.time())
     elif request.POST.get('period') == 'year':
         start_date = today - relativedelta(years=1)
-        end_date = today
+        end_date = datetime.combine(today, datetime.max.time())
     if 'pdf' in request.POST:
         if request.POST.get('details') == 'order':
             ord_items = order.objects.filter(date__range=[start_date, end_date]).order_by('-id')
@@ -2314,7 +2314,7 @@ def salesReport_pdf(request):
 
             response = HttpResponse(content_type='application/pdf')
 
-            response['Content-Disposition'] = ' filename="Sales_report.pdf"'
+            response['Content-Disposition'] = 'attachment; filename="Sales_report.pdf"'
 
             template = get_template(template_path)
 
