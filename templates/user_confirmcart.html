@@ -348,6 +348,7 @@ button {
                                             </button>
                                             <h6>COD Not available for amount more than 1000</h6>
                                           {%else%}
+                                           <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                                               <button type="button" name="{{total_amount }}" class="btn btn-success paywithcod w-100"><strong>PLACE &nbsp; | &nbsp; COD &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;<i class="fa fa-rupee " ></i>{{ total_amount }}</strong></a>
                                               </button>
                                               {%endif%}
@@ -365,7 +366,7 @@ button {
                                   </button>
                                   {%else%}
                                   <input type="hidden" id="total_amount" value="{{total_amount}}">
-                                    <button type="button" name="{{total_amount }}" class="btn btn-primary paywithRazor w-100"><strong>PAY WITH &nbsp; | &nbsp; RAZORPAY &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;<i class="fa fa-rupee " ></i>{{ total_amount }}</strong></a>
+                                    <button type="button" name="{{total_amount }}" class="btn btn-primary paywithRazor w-100"><strong>PAY WITH &nbsp; | &nbsp; ssssssRAZORPAY &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;<i class="fa fa-rupee " ></i>{{ total_amount }}</strong></a>
                                         </button>
                                         {%endif%}
                                           </td>
@@ -418,7 +419,8 @@ button {
                     {% endif %}
                 </div>
                   <label for="" id="errormsg" style="font-size: 14px; color: red;"></label>
-               
+              
+
                  
               
              
@@ -696,9 +698,9 @@ button {
 
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script src="{% static 'js/checkout1.js' %}"></script>
-  <script src="{% static 'js/checkout.js' %}"></script>
+  <!-- <script src="https://checkout.razorpay.com/v1/checkout.js"></script> -->
+  <script src="{% static 'js/newcheckout.js' %}"></script>
+  <!-- <script src="{% static 'js/checkout.js' %}"></script> -->
   <script src="{% static 'js/add-coupon.js' %}"></script>
 
   

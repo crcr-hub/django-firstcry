@@ -4922,17 +4922,54 @@ textarea.form-control-lg {
   white-space: nowrap;
   background-color: transparent;
   border: 0; }
-  .dropdown-item:hover, .dropdown-item:focus {
-    color: #1e2125;
-    background-color: #e9ecef; }
+  /* .dropdown-item:hover, 
+  .dropdown-item:focus {
+    color: #000;
+    background-color: #0e4f90; } */
+
+
+.dropdown .dropdown-menu .dropdown-item:hover,
+.dropdown .dropdown-menu .dropdown-item:focus {
+  color: #000 !important;
+  background-color: #0e4f90;
+}
+
   .dropdown-item.active, .dropdown-item:active {
-    color: #fff;
+    color: #070707;
     text-decoration: none;
-    background-color: #0d6efd; }
+    background-color: #b5c8e5; }
   .dropdown-item.disabled, .dropdown-item:disabled {
     color: #adb5bd;
     pointer-events: none;
     background-color: transparent; }
+
+/* 
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.25rem 1rem;
+  clear: both;
+  font-weight: 400;
+  color: #343a40;
+  text-align: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  background-color: transparent;
+  border: 0;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  color: #fff;
+  background-color: #0e4f90;
+}
+
+.dropdown-item:hover i,
+.dropdown-item:focus i {
+  color: #fff !important;
+} */
+
+
 
 .dropdown-menu.show {
   display: block; }
@@ -13276,7 +13313,7 @@ code {
       background: initial; }
     .dropdown .dropdown-menu .dropdown-item:hover {
       background-color: #f8f9fa;
-      color: #ffffff; }
+      color: #000; }
 
 /* Forms */
 .form-group {

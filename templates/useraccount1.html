@@ -4,11 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Automatic Carousel</title>
+  <title>FirstCry</title>
 
   <link rel="stylesheet" type="text/css" href=" {% static 'styles/css.css' %}" />
 
-
+ <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
   <link rel="stylesheet" type="text/css" href="{% static 'styles/bootstrap.min.css ' %}">
 
   <link rel="stylesheet" type="text/css" href="{% static 'styles/font-awesome.css' %}">
@@ -44,69 +44,158 @@
     <!-- ***** Header Area End ***** -->
 
   <!-- navmenu -->
-    <nav >
-        <div class="wrapper">
-          <input type="radio" name="slider" id="menu-btn">
-          <input type="radio" name="slider" id="close-btn">
-          <ul class="nav-links">
-            <label for="close-btn" class="btn close-btn"><i class="fas fa-times"></i></label>
-            <li><a href="{% url 'first' %}">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li>
-              <a href="#" class="desktop-item">Dropdown Menu</a>
-              <input type="checkbox" id="showDrop">
-              <label for="showDrop" class="mobile-item">Dropdown Menu</label>
-              <ul class="drop-menu">
-                <li><a href="#">Drop menu 1</a></li>
-                <li><a href="#">Drop menu 2</a></li>
-                <li><a href="#">Drop menu 3</a></li>
-                <li><a href="#">Drop menu 4</a></li>
-              </ul>
-            </li>
-            <li>
-              <a href="#" class="desktop-item">Mega Menu</a>
-              <input type="checkbox" id="showMega">
-              <label for="showMega" class="mobile-item">Mega Menu</label>
-              <div class="mega-box">
-                <div class="content">
-                  <div class="row">
+     <nav >
+    <div class="wrapper">
+      <input type="radio" name="slider" id="menu-btn">
+      <input type="radio" name="slider" id="close-btn">
+      <ul class="nav-links">
+        <label for="close-btn" class="btn close-btn"><i class="fas fa-times"></i></label>
+        <li><a href="{% url 'userhome' %}">Home</a></li>
+        <li>
+
+          <a href="#" class="desktop-item">Boys Fashion</a>
+          <input type="checkbox" id="showMega">
+          <label for="showMega" class="mobile-item">Mega Menu</label>
+          <div class="mega-box">
+            <div class="content">
+             
+              <div class="row">
+              
+                <header>SHOP BY CATEGORY</header> 
                 
-                  </div>
-                  <div class="row">
-                    <header>Design Services</header>
-                    <ul class="mega-links">
-                      <li><a href="#">Graphics</a></li>
-                      <li><a href="#">Vectors</a></li>
-                      <li><a href="#">Business cards</a></li>
-                      <li><a href="#">Custom logo</a></li>
-                    </ul>
-                  </div>
-                  <div class="row">
-                    <header>Email Services</header>
-                    <ul class="mega-links">
-                      <li><a href="#">Personal Email</a></li>
-                      <li><a href="#">Business Email</a></li>
-                      <li><a href="#">Mobile Email</a></li>
-                      <li><a href="#">Web Marketing</a></li>
-                    </ul>
-                  </div>
-                  <div class="row">
-                    <header>Security services</header>
-                    <ul class="mega-links">
-                      <li><a href="#">Site Seal</a></li>
-                      <li><a href="#">VPS Hosting</a></li>
-                      <li><a href="#">Privacy Seal</a></li>
-                      <li><a href="#">Website design</a></li>
-                    </ul>
-                  </div>
-                </div>
+                <ul class="mega-links">
+                  {%for i in boyscateg %}
+                  <li><a href="{% url 'detailed' i.id %} ">{{i.titile}}</a></li>
+
+                  {%endfor%}
+                 
+                </ul>
               </div>
-            </li>
-            <li><a href="#">Feedback</a></li>
-          </ul>
-          <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars"></i></label>
-        </div>
-      </nav>
+              <div class="row">
+                  <header>SHOP BY SIZE</header> 
+                <ul class="mega-links">
+                  <li ><a href="{% url 'menulinkSize' %}?size=zerotothreeM">New Born (0 - 3 Months)</a></li>
+                  <li><a href="{% url 'menulinkSize' %}?size=threetosixM">3 to 6 Months</a></li>
+                  <li><a href="{% url 'menulinkSize' %}?size=sixtonineM">6 to 9 Months</a></li>
+                  <li><a href="{% url 'menulinkSize' %}?size=ninetotwelveM">9 to 12 Months</a></li>
+            
+                  <li><a href="{% url 'menulinkSize' %}?size=twelvetoeighteenM">12 to 18 Months</a></li>
+                  <li><a href="{% url 'menulinkSize' %}?size=eighteentotwentyfourM">18 to 24 Months</a></li>
+                  <li><a href="{% url 'menulinkSize' %}?size=twotofourY">2 to 4 Years</a></li>
+                  <li><a href="{% url 'menulinkSize' %}?size=fourtosixY">4 to 6 Years</a></li>
+                  <li><a href="{% url 'menulinkSize' %}?size=sixtoeightY">6 to 8 Years</a></li>
+                </ul>
+              </div>
+              <div class="row">
+                <header>SHOP BY PRICE</header>
+                <ul class="mega-links">
+                  <li ><a href="#">all under 200</a></li>
+                  <li><a href="#">all under 300</a></li>
+                  <li><a href="#">all under 400</a></li>
+                  <li><a href="#">all under 500</a></li>
+                  <li><a href="#">all under 1000</a></li>
+                </ul>
+              </div>
+              <div class="row">
+                <header>SHOP BY BRAND</header>
+                <ul class="mega-links">
+                  {% for b in brand%}
+                  <li><a href="#">{{b.name}}</a></li>
+                  {%endfor%}
+
+                </ul>
+              </div>
+              <div class="row">
+                <img src="" alt="">
+              </div>
+            </div>
+          </div>
+
+
+
+        </li>
+        <li>
+          <a href="#" class="desktop-item">Girls Fashion</a>
+          <input type="checkbox" id="showMega">
+          <label for="showMega" class="mobile-item">Mega Menu</label>
+          <div class="mega-box">
+            <div class="content">
+             
+              <div class="row">
+                <header>Design Services</header>
+                <ul class="mega-links">
+                  {%for i in girlscateg %}
+                  <li><a href="{% url 'detailed' i.id %} ">{{i.titile}}</a></li>
+
+                  {%endfor%}
+                </ul>
+              </div>
+              <div class="row">
+                <header>SHOP BY SIZE</header> 
+              <ul class="mega-links">
+               
+                
+              </ul>
+            </div>
+              <div class="row">
+                <header>Security services</header>
+                <ul class="mega-links">
+                  <li><a href="#">Site Seal</a></li>
+                  <li><a href="#">VPS Hosting</a></li>
+                  <li><a href="#">Privacy Seal</a></li>
+                  <li><a href="#">Website design</a></li>
+                </ul>
+              </div>
+              <div class="row">
+                <img src="" alt="">
+              </div>
+            </div>
+          </div>
+        </li>
+        <li>
+          <a href="#" class="desktop-item">Mega Menu</a>
+          <input type="checkbox" id="showMega">
+          <label for="showMega" class="mobile-item">Mega Menu</label>
+          <div class="mega-box">
+            <div class="content">
+              <div class="row">
+                <img src="" alt="">
+              </div>
+              <div class="row">
+                <header>Design Services</header>
+                <ul class="mega-links">
+                  <li><a href="#">Graphics</a></li>
+                  <li><a href="#">Vectors</a></li>
+                  <li><a href="#">Business cards</a></li>
+                  <li><a href="#">Custom logo</a></li>
+                </ul>
+              </div>
+              <div class="row">
+                <header>Email Services</header>
+                <ul class="mega-links">
+                  <li><a href="#">Personal Email</a></li>
+                  <li><a href="#">Business Email</a></li>
+                  <li><a href="#">Mobile Email</a></li>
+                  <li><a href="#">Web Marketing</a></li>
+                </ul>
+              </div>
+              <div class="row">
+                <header>Security services</header>
+                <ul class="mega-links">
+                  <li><a href="#">Site Seal</a></li>
+                  <li><a href="#">VPS Hosting</a></li>
+                  <li><a href="#">Privacy Seal</a></li>
+                  <li><a href="#">Website design</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </li>
+        <li><a href="#">Feedback</a></li>
+      </ul>
+      <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars"></i></label>
+    </div>
+  </nav>
 
 </header>
 <div style="width: 100%; height: 50px;">

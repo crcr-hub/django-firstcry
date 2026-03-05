@@ -90,6 +90,7 @@ urlpatterns = [
     path('cart',views.showcart,name='cart'),
     path('update-item/<int:item_id>/', views.update_cart_item, name='update_cart_item'),
     path('remove-item/<int:item_id>/', views.remove_cart_item, name='remove_cart_item'),
+     path('paytoproceed',views.paytoproceed,name='paytoproceed'),
     path('order',views.order_product,name='order'),
     path('order_product_from_orderhistory',views.order_product_from_orderhistory,name='order_product_from_orderhistory'),
    
@@ -114,7 +115,7 @@ urlpatterns = [
     path('filter-data',views.filter_data,name='filter-data'),
     
     path('oneprod_filter',views.oneprod_filter,name='oneprod_filter'),
-    path('paytoproceed',views.paytoproceed,name='paytoproceed'),
+   
     path('menulinkSize',views.menulinkSize,name='menulinkSize'),
     
     path('orderItems/<pk>',views.orderItems,name='orderItems'),

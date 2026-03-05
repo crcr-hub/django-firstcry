@@ -4,11 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Automatic Carousel</title>
+  <title>FirstCry</title>
 
   <link rel="stylesheet" type="text/css" href=" {% static 'styles/css.css' %}" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  
+  <link rel="stylesheet" type="text/css" href=" {% static 'styles/buttonstyle.css' %}" />
 
   <link rel="stylesheet" type="text/css" href="{% static 'styles/bootstrap.min.css' %}">
 
@@ -22,7 +22,7 @@
 
   <link rel="stylesheet" href="{% static 'styles/foruser.css' %}">
 
-  <link rel="stylesheet" href="{% static 'adminstyle2/css/style.css' %}">
+
   <!-- End layout styles -->
   <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
 
@@ -190,7 +190,7 @@ body {
 
        
               <div id="menu1234" style="width: 300px;">
-                <h3>My Account</h2>
+                <h3>My Accountssss</h2>
                   <div style="height: 20px;"></div>
                
                 <div style="height: 40px; background-color: bisque;"> <h5 style=" border-top: 10px solid bisque; margin-left: 10px; " >My Orders </h4></div>
@@ -217,7 +217,7 @@ body {
             
               </div>
      
-            <div id="images" style="background-color: #ffffff;; margin-left: 50px;  box-shadow: 2px 2px 5px; ">
+            <div id="images" style="background-color: #ffffff;; margin-left: 150px;  box-shadow: 2px 2px 5px; ">
               <!-- Your images go here -->
               
               <div style="height: 80px; display: flex;"> <h4 style="margin-top: 30px; margin-left: 10px; font-family: Arial, sans-serif; font-weight: bold; width: 200px;">ORDER HISTORY </h4>
@@ -307,7 +307,7 @@ body {
                                 </table>
                                 <input type="hidden" value="{{item.size}}" id="sizevalue">
                                 <a data-product="{{item.product.id}}" class=" add-to-cart" id="add_to_cart"  >
-                                <button type="button" class="btn btn-block btn-lg btn-gradient-primary mt-4 " style="width: 300px; margin-left: 10px;">ReOrder</button>
+                                <button type="button" class="btn1 btn1-block btn1-lg btn1-gradient-primary mt-4 " style="width: 300px; margin-left: 10px;">ReOrder</button>
                                   </a>
                               </div>
                               <div style=" margin-left: 5px; height: 100%; width: 30%; " >
@@ -350,9 +350,8 @@ body {
                         </td>
                         <td>
                           <script type="text/javascript">
-                            var totalAmount = {{details.total_amount}};
-                           
-                            var discountPercentage = {{ details.coupon.discount }};
+                            var totalAmount = parseFloat("{{ details.total_amount|default:'0' }}");
+                            var discountPercentage = parseFloat("{{ details.coupon.discount|default:'0' }}");
                             var originalAmount = totalAmount / (1 - discountPercentage / 100);
                             var discountedAmount = (originalAmount * discountPercentage) / 100;
                             
@@ -376,21 +375,21 @@ body {
                     </table>
                   </div>
                   {% if details.order_status == "Delivered"%}
-                  <button type="submit" name="return" class="btn btn-block btn-lg btn-gradient-primary mt-4 " style="width: 300px;">Return your Order</button>
+                  <button type="submit" name="return" class="btn1 btn1-block btn1-lg btn1-gradient-primary mt-4 " style="width: 300px;">Return your Order</button>
                  {%elif details.order_status == 'Cancelled'%}
                  {%elif details.order_status == 'Returned' %}
                  {%elif details.order_status == 'Cancelled by Admin' %}
 
                  
                   {%else%}
-                  <button type="submit" name="cancel" class="btn btn-block btn-lg btn-gradient-primary mt-4 " style="width: 300px;">Cancel Your Order</button>
+                  <button type="submit" name="cancel" class="btn1 btn1-block btn1-lg btn1-gradient-primary mt-4 " style="width: 300px;">Cancel Your Order</button>
                  {%endif%}
                 </form>
                   {%if details.payment_method == 'Pending'%}
                   <form action="{% url 'confirm_order' %}" method="post">
                     {%csrf_token%}
                           <input type="hidden" name="id" value="{{details.id}}">         
-                  <button type="submit" name="name" id="34" class="btn btn-block btn-lg btn-gradient-primary mt-4 " style="width: 300px;">Re Pay With RazorPay</button>
+                  <button type="submit" name="name" id="34" class="btn1 btn1-block btn1-lg btn1-gradient-primary mt-4 " style="width: 300px;">Re Pay With RazorPay</button>
                 
                 </form>
                 {%endif%}

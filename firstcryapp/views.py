@@ -15,13 +15,14 @@ from django.views.decorators.cache import cache_control
 from django.contrib.auth import authenticate, login, logout 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
-
+from django.views.decorators.http import require_POST
 from datetime import datetime, timedelta
 from django.db.models.functions import TruncMonth
 from django.contrib.auth.views import LoginView
 from django.urls import reverse_lazy
-from .forms import ImageUploadForm
+from .forms import ImageUploadForm, UserUpdationForm
 import base64
+from .forms import RegistrationForm
 import xlsxwriter
 from dateutil.relativedelta import relativedelta
 from django.template.loader import get_template
@@ -187,27 +188,26 @@ def validate_mobile_number(mobile_number):
     pattern = re.compile(r'^\d{10}$')
     return bool(pattern.match(mobile_number))
 
-
+# User Registration
 def registration(request):
     if request.method == 'POST':
         email = request.session.get('email')
-        firstname = request.POST.get('firstname')
-        lastname = request.POST.get('lastname')
-        phone = request.POST.get('phonenumber')
-        password1 = request.POST.get('password1')
-        password2=request.POST.get('password2')
-        if validate_mobile_number(phone):
-            if password1 == password2:
-                user = User.objects.create_user(email=email,first_name=firstname,last_name=lastname,password = password1,mobile=phone)
-                user.save()
-                return render(request, 'index.html',{'email' :email})
-            else:
-                messages.info(request,'Password and confirm password must match')
-                return render(request, 'register.html',{'email' :email})
-        else:
-            messages.info(request,'not a valid Phone Number')
+        if User.objects.filter(email=email).exists():
+            messages.info(request, 'Email already registered with US')
             return render(request, 'register.html',{'email':email})
-    pass
+        form = RegistrationForm(request.POST)
+        
+        if form.is_valid():
+            data = form.cleaned_data
+            user = User.objects.create_user(email=email,first_name=data['firstname'],
+                                            last_name=data['lastname'],password = data['password1'],
+                                            mobile=data['phone'])
+            user.save()
+            return redirect(first)
+        
+        else:
+            return render(request, 'register.html',{'email':email,'form':form})
+   
 
 # User Register Ends Here --------------------------------------------------------------
 
@@ -216,27 +216,20 @@ def registration(request):
 
 def user_login(request):
     if request.method == 'POST':
-        print("helooooo")
         email = request.POST['email']
         password = request.POST['password']
-        print(email)
         valid=is_valid_email(email)
         if valid:
             user = authenticate(email=email,password=password)
             if user :
                 login(request, user)
-                print("thish",user)
                 ban = user.ban_status
                 if user.is_staff:
-                    request.session['email'] = email
-                    print(request.session['email'])
                     return redirect(adminhome)
                 if ban:
                     messages.info(request,'You are banned to access please contact administator')
                     return redirect(user_login)
                 else:
-                    request.session['email'] = email
-                   
                     addr = address.objects.all().filter(user=user.id)
                     if addr:
                         return redirect(userhome)
@@ -253,35 +246,30 @@ def user_login(request):
         return render(request,'login.html')
 
     
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
 def userhome(request):
-    if 'email' in request.session:
-        email =  request.session['email'] 
-        uname = User.objects.get(email=email)
-        product = categories.objects.all().exclude(image='')
-        #boyscategory =categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Boys")).order_by('-id')
-        boyscategory =categories.objects.all().filter(gender="Boys").order_by('-id')
-        
-        girlscategory = categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Girls")).order_by('-id')
-        print(boyscategory)
-        brand = brands.objects.all()
-        context1 = {'products':product}
-        uid = User.objects.get(email=email).pk
-        mydata = User.objects.filter(pk= uid).values()
-        context2 = {'mydata':mydata}
-        data ={'products':product,'mydata':mydata,
+    user = request.user
+    uname = User.objects.get(id=user.id)
+    product = categories.objects.all().exclude(image='')
+    #boyscategory =categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Boys")).order_by('-id')
+    boyscategory =categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Boys")).order_by('-id')  
+    girlscategory = categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Girls")).order_by('-id')
+    brand = brands.objects.all()
+    uid = User.objects.get(email=user.email).pk
+    mydata = User.objects.filter(pk= uid).values()
+    data ={'products':product,'mydata':mydata,
                'brand':brand,
                'boyscateg':boyscategory,
                'girlscateg':girlscategory}
-        return render(request,'userhome.html',data)
-    return redirect(user_login)
+    return render(request,'userhome.html',{'data':data})
+
 
 from django.db.models import Sum
 from django.db.models.functions import ExtractMonth
 
 @user_passes_test(lambda u: u.is_staff)
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')    
 def adminhome(request):
     today = datetime.now()
@@ -332,118 +320,114 @@ def adminhome(request):
     return render(request,'adminhome1.html',data)
     
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
+@login_required(login_url='user_login')
 def user_logout(request):
     request.session.flush()
     logout(request)
     return redirect(first)
     
 # Barchart-------------------------------------
+
 @user_passes_test(lambda u: u.is_staff)
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)   
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
 @login_required(login_url='user_login')
 def get_monthly_order_data(request):
     current_year = datetime.now().year
-    current_month = datetime.now().month
 
-    # Define the start month
-    start_month = 1  # January
+    months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ]
 
-    # Create a list to store the months
-    monthsnum = []
+    # Sales count per month (current year only)
+    sales_qs = (
+        order.objects
+        .filter(order_status='Delivered', date__year=current_year)
+        .annotate(month=ExtractMonth('date'))
+        .values('month')
+        .annotate(order_count=Count('id'))
+        .order_by('month')
+    )
 
-    # Loop through each year and month from the start year to the current year/month
-    for year in range(2024, current_year + 1):
-        start = start_month if year == current_year else 1
-        end = current_month if year == current_year else 12
-        for month in range(start, end + 1):
-            monthsnum.append(month)
+    # Revenue per month (current year only)
+    revenue_qs = (
+        order.objects
+        .filter(order_status='Delivered', date__year=current_year)
+        .annotate(month=ExtractMonth('date'))
+        .values('month')
+        .annotate(total_amount=Sum('total_amount'))
+        .order_by('month')
+    )
 
-    # Now, months contains the list of month numbers from January 2024 up to the current month
-    monthly_sales_order_count = order.objects.filter( date__year=current_year,
-        date__month__lte=current_month,order_status= 'Delivered').values('date__month').annotate(order_count=Count('id'))
-    print(monthly_sales_order_count)
+    # Initialize data
+    monthdata = [0] * 12
+    linechartMonthData = [0] * 12
 
-    monthdata = []
-    for i in reversed(monthly_sales_order_count):
-        monthdata.insert(0,i['order_count'])
-    
-    monthdata.reverse() 
-    length_difference = len(monthsnum) - len(monthdata)
-    monthdata.extend([0] * length_difference)
-    monthdata.reverse() 
-    # for line chart
-    linechartMonthData = []
-    monthly_totals = order.objects.annotate(month=ExtractMonth('date')).filter(order_status= 'Delivered').values('month').annotate(total_amount=Sum('total_amount'))
-    for i in reversed(monthly_totals):
-        linechartMonthData.append(float(i['total_amount']))
+    for item in sales_qs:
+        monthdata[item['month'] - 1] = item['order_count']
 
-    months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-    month_names = [months[number - 1] for number in monthsnum]
-    
-    l_difference = len(monthsnum) - len(linechartMonthData)
-    linechartMonthData.extend([0] * l_difference)
-   
-    linechartMonthData.reverse() 
-    return JsonResponse({'label':month_names,'varibles':monthdata,'ldata':linechartMonthData}, safe=False)
+    for item in revenue_qs:
+        linechartMonthData[item['month'] - 1] = float(item['total_amount'])
+
+    return JsonResponse({
+        'label': months,
+        'varibles': monthdata,
+        'ldata': linechartMonthData
+    },safe=False)
+
+
+
 
 #changing chart data
 @user_passes_test(lambda u: u.is_staff)
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)   
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)   
 @login_required(login_url='user_login')
 def changeChartData(request):
     value = request.GET.get('value')
     if value == 'month':
         current_year = datetime.now().year
-        current_month = datetime.now().month
 
-        # Define the start month
-        start_month = 1  # January
+        months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+        ]
 
-        # Create a list to store the months
-        monthsnum = []
+        # Sales count per month (current year only)
+        sales_qs = (
+            order.objects
+            .filter(order_status='Delivered', date__year=current_year)
+            .annotate(month=ExtractMonth('date'))
+            .values('month')
+            .annotate(order_count=Count('id'))
+            .order_by('month')
+        )
 
-        # Loop through each year and month from the start year to the current year/month
-        for year in range(2024, current_year + 1):
-            start = start_month if year == current_year else 1
-            end = current_month if year == current_year else 12
-            for month in range(start, end + 1):
-                monthsnum.append(month)
+        # Revenue per month (current year only)
+        revenue_qs = (
+            order.objects
+            .filter(order_status='Delivered', date__year=current_year)
+            .annotate(month=ExtractMonth('date'))
+            .values('month')
+            .annotate(total_amount=Sum('total_amount'))
+            .order_by('month')
+        )
 
-        # Now, months contains the list of month numbers from January 2024 up to the current month
-        monthly_sales_order_count = order.objects.filter( date__year=current_year,
-            date__month__lte=current_month,order_status= 'Delivered').values('date__month').annotate(order_count=Count('id'))
+        # Initialize data
+        monthdata = [0] * 12
+        linechartMonthData = [0] * 12
 
-        monthdata = []
-        for i in reversed(monthly_sales_order_count):
-            monthdata.insert(0,i['order_count'])
-        
-        monthdata.reverse() 
-        print(monthdata)
-    
-        length_difference = len(monthsnum) - len(monthdata)
-        monthdata.extend([0] * length_difference)
-        monthdata.reverse() 
-        print(monthdata)
+        for item in sales_qs:
+            monthdata[item['month'] - 1] = item['order_count']
 
-        
-        # for line chart
-        linechartMonthData = []
-        monthly_totals = order.objects.annotate(month=ExtractMonth('date')).values('month').annotate(total_amount=Sum('total_amount'))
-        for i in reversed(monthly_totals):
-            linechartMonthData.append(float(i['total_amount']))
+        for item in revenue_qs:
+            linechartMonthData[item['month'] - 1] = float(item['total_amount'])
 
-        
-        
-        months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        month_names = [months[number - 1] for number in monthsnum]
-        
-        l_difference = len(monthsnum) - len(linechartMonthData)
-        linechartMonthData.extend([0] * l_difference)
-    
-        linechartMonthData.reverse() 
-     
-        return JsonResponse({'label':month_names,'varibles':monthdata,'ldata':linechartMonthData}, safe=False)
+        return JsonResponse({
+            'label': months,
+            'varibles': monthdata,
+            'ldata': linechartMonthData
+        },safe=False)
     elif value == 'week':
         current_year = datetime.now().year
         current_month = datetime.now().month
@@ -521,179 +505,169 @@ def changeChartData(request):
 
 
 # user personal data ------------------------------------------
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
 def personal_data(request):
-    if 'email' in request.session:
-        user = User.objects.get(email=request.session['email'])
-        return render(request,'user_personal.html',{'user':user})
+    if request.user:
+        user = User.objects.get(email=request.user)
+        return render(request,'user_personal.html',{'user':request.user})
     return redirect(user_login)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
 def updateuser(request):
-    if 'email' in request.session:
-        userid = User.objects.get(email=request.session['email']).pk
-        user = User.objects.get(id=userid)
-        user.first_name=request.POST.get('firstname')
-        user.last_name = request.POST.get('lastname')
-        user.mobile = request.POST.get('mobile')
-        user.save()
-        return redirect(personal_data)
-    return redirect(user_login)
+    if request.method == 'POST':
+        form = UserUpdationForm(request.POST)
+        userid = request.user
+        user = User.objects.get(id=userid.id)
+        if form.is_valid():
+            data = form.cleaned_data
+            user.first_name=data['firstname']
+            user.last_name = data['lastname']
+            user.mobile = data['mobile']
+            print(data)
+            user.save()
+            return redirect(personal_data)
+        else:
+            print(form.errors)
+            return render(request,'user_personal.html',{'user':request.user,'form':form})
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
 def show_changepassword(request):
-    if 'email' in request.session:
-        return render(request,'user_changepassword.html')
-    return redirect(user_login)
+    return render(request,'user_changepassword.html')
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
+@require_POST
 def change_password(request):
-    if 'email' in request.session:
-        email = request.session['email']
-        password = request.POST.get('oldpassword')
-        npass = request.POST.get('newpassword1')
-        user = auth.authenticate(email=email,password=password)
-        if user is not None:
-            user = User.objects.get(email=email)
-            user.set_password(npass)
-            user.save()
-            return JsonResponse({'success': True})
-        else:
-            print("NOt")
-            return JsonResponse({'error': 'Passwords do not match'})
-        print("ok")
-        return redirect(show_changepassword)
-    return redirect(user_login)
+    email = request.user.email
+    password = request.POST.get('oldpassword')
+    npass = request.POST.get('newpassword1')
+    user = auth.authenticate(email=email,password=password)
+    if user is not None:
+        user = User.objects.get(email=email)
+        user.set_password(npass)
+        user.save()
+        return JsonResponse({'success': True})
+    else:
+        return JsonResponse({'error': 'Password do not match'})
+
 
 
 # User Address Management ----------------------------------
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
 def show_address(request):
-    if 'email' in request.session:
-        email = request.session['email']
-        userid = User.objects.get(email=email).pk
-        addr = address.objects.all().filter(user=userid)
-        count = addr.count()
-        if not addr:
-            start = True
-        else:
-            start = False
-        return render(request,'user_address.html',{'address':addr,'start':start,'count':int(count)})
-    return redirect(user_login)
+    userid =request.user.id
+    addr = address.objects.all().filter(user=userid)
+    count = addr.count()
+    if not addr:
+        start = True
+    else:
+        start = False
+    return render(request,'user_address.html',{'address':addr,'start':start,'count':int(count)})
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
 def update_address(request,pk):
-        if 'email' in request.session:
-            if request.method =='POST':
-                addr = address.objects.get(id=pk)         
-                addr.name= request.POST.get('name')
-                addr.house_name = request.POST.get('housename')
-                addr.street_name = request.POST.get('streetname')
-                addr.landmark = request.POST.get('landmark')
-                addr.pincode = request.POST.get('pincode')
-                addr.city = request.POST.get('city')
-                addr.state = request.POST.get('state')
-                addr.country = request.POST.get('country')
-                addr.default_value = True
-                addr.save()
-                print("saved")
-                return redirect(show_address)
-        return redirect(user_login)
+    if request.method =='POST':
+        user = request.user
+        addr = address.objects.get(id=user.id)         
+        addr.name= request.POST.get('name')
+        addr.house_name = request.POST.get('housename')
+        addr.street_name = request.POST.get('streetname')
+        addr.landmark = request.POST.get('landmark')
+        addr.pincode = request.POST.get('pincode')
+        addr.city = request.POST.get('city')
+        addr.state = request.POST.get('state')
+        addr.country = request.POST.get('country')
+        addr.default_value = True
+        addr.save()
+        return redirect(show_address)
+        
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
 def add_address(request):
     if request.method =='POST':
-        if request.session['email']:
-            email = request.session['email']
-            user = User.objects.get(email=email)
-            addr1 = address.objects.all().filter(user=user.id) 
-            if addr1:
-                for items in addr1:
-                    ad = address.objects.get(id=items.id)
-                    ad.default_value = False
-                    print("yes")
-                    ad.save()
-            addr = address()           
-            addr.user=user
-            addr.name= request.POST.get('name')
-            addr.house_name = request.POST.get('housename')
-            addr.street_name = request.POST.get('streetname')
-            addr.landmark = request.POST.get('landmark')
-            addr.pincode = request.POST.get('pincode')
-            addr.city = request.POST.get('city')
-            addr.state = request.POST.get('state')
-            addr.country = request.POST.get('country')
-            addr.default_value = True
-            addr.save()
-            if 'cart' in request.POST:
-                return redirect(confirmorder)
-            return redirect(show_address)
-        return redirect(user_login)
+        user = request.user
+        addr1 = address.objects.all().filter(user=user.id) 
+        if addr1:
+            for items in addr1:
+                ad = address.objects.get(id=items.id)
+                ad.default_value = False
+                ad.save()
+        addr = address()           
+        addr.user=user
+        addr.name= request.POST.get('name')
+        addr.house_name = request.POST.get('housename')
+        addr.street_name = request.POST.get('streetname')
+        addr.landmark = request.POST.get('landmark')
+        addr.pincode = request.POST.get('pincode')
+        addr.city = request.POST.get('city')
+        addr.state = request.POST.get('state')
+        addr.country = request.POST.get('country')
+        addr.default_value = True
+        addr.save()
+        if 'cart' in request.POST:
+            return redirect(confirmorder)
+        return redirect(show_address)
+    
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
 def delete_address(request,pk):
-    if 'email' in request.session:
-        if request.method =='POST':
-                user = User.objects.get(email=request.session['email'])
-                addr = address.objects.get(id = pk)
-                if addr.default_value == True:
-                    addr1 = address.objects.filter(user = user).exclude(id=pk)
-                    print("this",addr1)
-                    for items in addr1:
-                        if items.default_value == True:
-                            ids = 0
-                            break
-                        else:
-                            ids = items.id
-                    print(ids)
-                    if ids == 0:
-                        addr.delete()
+    if request.method =='POST':
+            user = request.user
+            addr = address.objects.get(id = pk)
+            if addr.default_value == True:
+                addr1 = address.objects.filter(user = user).exclude(id=pk)
+                for items in addr1:
+                    if items.default_value == True:
+                        ids = 0
+                        break
                     else:
-                        ad = address.objects.get(id=ids)
-                        ad.default_value = True
-                        ad.save()
-                        addr.delete()
-                else:
+                        ids = items.id
+                if ids == 0:
                     addr.delete()
-                return redirect(show_address)     
-    return redirect(user_login) 
+                else:
+                    ad = address.objects.get(id=ids)
+                    ad.default_value = True
+                    ad.save()
+                    addr.delete()
+            else:
+                addr.delete()
+            return redirect(show_address)     
+ 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login')
 def make_default(request,pk):
-        if 'email' in request.session:
-            email = request.session['email']
-            n = request.GET.get('n')
-            print(n)
-            user = User.objects.get(email=email)
-            addr1 = address.objects.all().filter(user=user.id)
-            
-            if addr1:
-                for items in addr1:
-                    ad = address.objects.get(id=items.id)
-                    ad.default_value = False
-                   
-                    ad.save()
-            
-            addr2 = address.objects.get(id=pk)
-            addr2.default_value = True
-            addr2.save()
-            if n:
-                return redirect(confirmorder)
-            else:
-                return redirect(showcart)
-        return redirect(user_login)
 
+    user = request.user
+    n = request.GET.get('n')
+    addr1 = address.objects.all().filter(user=user.id)       
+    if addr1:
+        for items in addr1:
+            ad = address.objects.get(id=items.id)
+            ad.default_value = False
+                   
+            ad.save()
+            
+    addr2 = address.objects.get(id=pk)
+    addr2.default_value = True
+    addr2.save()
+    if n:
+        return redirect(confirmorder)
+    else:
+        return redirect(showcart)
+       
 
 
 
@@ -701,32 +675,31 @@ def make_default(request,pk):
 
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')  
 def alluser(request):
-    if 'email' in request.session:
-        details = User.objects.all().order_by('pk').values().exclude(email='admin@admin.com')
-        return render(request,'adminuser1.html',{'users':details})
-    return redirect(user_login)
+    user= request.user
+    details = User.objects.all().order_by('pk').values().exclude(email='admin@admin.com')
+    return render(request,'adminuser1.html',{'users':details})
+    
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def edituser(request,pk):
-    if 'email' in request.session:
-        instance = User.objects.filter(pk=pk).values()
-        return render(request,'adminedituser1.html',{'users':instance})
-    return redirect(user_login)
+    instance = User.objects.filter(pk=pk).values()
+    return render(request,'adminedituser1.html',{'users':instance})
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True) 
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True) 
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')    
 def update_user(request,pk):
     instance_edit = User.objects.get(pk=pk)
     if request.POST:
-        if 'email' in request.session:
+        if request.user.email == "admin@admin.com":
             firstname = request.POST.get('firstname')
             lastname = request.POST.get('lastname')
             email = request.POST.get('email')
@@ -741,137 +714,125 @@ def update_user(request,pk):
     
     
     
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def block_user(request,pk):
-    if 'email' in request.session:
-        user = User.objects.get(id=pk)
-        user.ban_status = True
-        user.save()
-        return redirect(alluser)
-    return redirect(user_login)
+    user = User.objects.get(id=pk)
+    user.ban_status = True
+    user.save()
+    return redirect(alluser)
+  
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def unblock_user(request,pk):
-    if 'email' in request.session:
-        user=User.objects.get(id=pk)
-        user.ban_status = False
-        user.save()
-        return redirect(alluser)
-    return redirect(user_login)
+    user=User.objects.get(id=pk)
+    user.ban_status = False
+    user.save()
+    return redirect(alluser)
+   
 
 
 # add category-------- Category management--------------------------------------------------
 
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def category(request):
-    if 'email' in request.session:
-        return render(request,'admin_add_category.html')
-    return redirect(user_login)
+    return render(request,'admin_add_category.html')
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def add_category(request):
-    if 'email' in request.session:
-        if request.method == 'POST':
-            instance = categories()
-            instance.titile = request.POST.get('titile')
-            instance.description = request.POST.get('description')
-            instance.visibility = request.POST.get('add')
-            if 'image' in request.FILES:
-                instance.image = request.FILES['image']
-            instance.type = request.POST.get('types')
-            instance.gender = request.POST.get('gender')
-            #instance = categories(titile=name,description=descrip,image=image,visibility=add, type=type,gender=gender)
-            instance.save()
-            return redirect(view_category)
+    if request.method == 'POST':
+        instance = categories()
+        instance.titile = request.POST.get('titile')
+        instance.description = request.POST.get('description')
+        instance.visibility = request.POST.get('add')
+        if 'image' in request.FILES:
+            instance.image = request.FILES['image']
+        instance.type = request.POST.get('types')
+        instance.gender = request.POST.get('gender')
+        #instance = categories(titile=name,description=descrip,image=image,visibility=add, type=type,gender=gender)
+        instance.save()
+        return redirect(view_category)
     return redirect(user_login)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def view_category(request):
-    if 'email' in request.session:
-        if request.method =='POST':
-            details = categories.objects.all().order_by('pk').values()
-            print(details)
-            return render(request,'admin_view_category.html',{'details':details})
+    if request.method =='POST':
         details = categories.objects.all().order_by('pk').values()
         return render(request,'admin_view_category.html',{'details':details})
-    return redirect(user_login)
+    details = categories.objects.all().order_by('pk').values()
+    return render(request,'admin_view_category.html',{'details':details})
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def edit_category(request,pk):
      details = categories.objects.filter(pk=pk).values()
-     print(details)
      return render(request,'admin_edit_category.html',{'desc':details})
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def update_category(request,pk):
-    if 'email' in request.session:
-        instance = categories.objects.get(pk=pk)
-        if request.method == 'POST':
-            instance.titile = request.POST.get('titile')
-            instance.description = request.POST.get('description')
-            instance.type = request.POST.get('types')
-            instance.gender = request.POST.get('gender')
-            if 'image' in request.FILES:
-                instance.image = request.FILES['image']
+    instance = categories.objects.get(pk=pk)
+    if request.method == 'POST':
+        instance.titile = request.POST.get('titile')
+        instance.description = request.POST.get('description')
+        instance.type = request.POST.get('types')
+        instance.gender = request.POST.get('gender')
+        if 'image' in request.FILES:
+            instance.image = request.FILES['image']
         
 
-            instance.save()
-            return redirect(view_category)
+        instance.save()
+        return redirect(view_category)
     return redirect(user_login)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def delete_category(request,pk):
-    if 'email' in request.session:
-        instance= categories.objects.get(pk=pk)
-        instance.soft_delete()
-        return redirect(view_category)
-    return redirect(user_login)
+    instance= categories.objects.get(pk=pk)
+    instance.soft_delete()
+    return redirect(view_category)
+
 
 
 
 # add and update product------ Product Management------------------------------------------
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def product(request):
-    if 'email' in request.session:
-        cat = categories.objects.all()
-        prod = products.objects.all()
-        col = color.objects.all()
-        brand = brands.objects.all()
-        details = {'context':cat,
+    cat = categories.objects.all()
+    prod = products.objects.all()
+    col = color.objects.all()
+    brand = brands.objects.all()
+    details = {'context':cat,
                    'context2':prod,
                    'color':col,
                    'brand':brand}
-        return render(request,'adminproduct1.html' ,details)
-    return redirect(user_login)
+    return render(request,'adminproduct1.html' ,details)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def add_product(request):
-    if 'email' in request.session:
-        if request.method == 'POST':
+    
+    if request.method == 'POST':
             prod = products()
             variant = variation() 
             variant.zerotothreeM = request.POST.get('0to3')
@@ -911,32 +872,30 @@ def add_product(request):
     return redirect(user_login)
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def change_for_types(request):
     if request.method == 'GET':
         value = request.GET.get('selected_value')
         categ = categories.objects.get(id = value)
-        print(categ.type)
         response_data = categ.type
         return JsonResponse({'res':response_data})
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def add_color(request):
-    if 'email' in request.session:
-        if request.method == 'GET':
-            name = request.GET.get('name')
-            code = request.GET.get('code')
-            instance = color(name=name,code = code)
-            instance.save()
+    if request.method == 'GET':
+        name = request.GET.get('name')
+        code = request.GET.get('code')
+        instance = color(name=name,code = code)
+        instance.save()
     return redirect(user_login)
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def add_color_js(request):
@@ -959,101 +918,94 @@ def add_color_js(request):
             return JsonResponse({'value':1})
     return redirect(user_login)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def editproduct(request ,pk):
-    if 'email' in request.session:
-        product = products.objects.get(id=pk)
-        cat = categories.objects.all()  
-        return render(request,'admin_edit_product1.html',{'details':product,'context':cat})
-    return redirect(user_login)
+    product = products.objects.get(id=pk)
+    cat = categories.objects.all()  
+    return render(request,'admin_edit_product1.html',{'details':product,'context':cat})
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def productupdation(request,pk):
-    if 'email' in request.session:
-        if 'update' in request.POST:
-            instance=products.objects.get(id=pk)
-            if request.method == 'POST':
-                instance.name = request.POST.get('name')
-                if 'image' in  request.FILES:
-                    instance.image = request.FILES['image']
+    if 'update' in request.POST:
+        instance=products.objects.get(id=pk)
+        if request.method == 'POST':
+            instance.name = request.POST.get('name')
+            if 'image' in  request.FILES:
+                instance.image = request.FILES['image']
 
-                instance.description = request.POST.get('description')
-                instance.necktype = request.POST.get('necktype')
-                categ = categories.objects.get(id=request.POST.get('categ'))
-                instance.category = categ
-                instance.sleevetype = request.POST.get('sleevetype')
-                instance.gender = request.POST.get('gender')
-                instance.qnty = request.POST.get('qnty')
-                instance.price = request.POST.get('price')
-                instance.deal = request.POST.get('deal')
-                instance.Offer_price =request.POST.get('offer')
-                instance.save()
-                print(request.POST)
-                return redirect(showproduct)
+            instance.description = request.POST.get('description')
+            instance.necktype = request.POST.get('necktype')
+            categ = categories.objects.get(id=request.POST.get('categ'))
+            instance.category = categ
+            instance.sleevetype = request.POST.get('sleevetype')
+            instance.gender = request.POST.get('gender')
+            instance.qnty = request.POST.get('qnty')
+            instance.price = request.POST.get('price')
+            instance.deal = request.POST.get('deal')
+            instance.Offer_price =request.POST.get('offer')
+            instance.save()
+            print(request.POST)
+            return redirect(showproduct)
         else:
             return redirect(edit_varient,pk)
-        return redirect(showproduct)
-    return redirect(user_login)
+    return redirect(showproduct)
+  
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def deleteproduct(request,pk):
-    if 'email' in request.session:
-        instance=products.objects.get(id=pk)
-        instance.soft_delete()
-        return redirect(showproduct)
-    return redirect(user_login)
+    instance=products.objects.get(id=pk)
+    instance.soft_delete()
+    return redirect(showproduct)
 
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def showproduct(request):
-    if 'email' in request.session:
-        product = products.objects.all().order_by('pk')
-        wishli = whishlist.objects.all()
-        return render(request,'admin_view_product1.html',{'products':product,'wishlist':wishli})
-    return redirect(user_login)
+    product = products.objects.all().order_by('pk')
+    wishli = whishlist.objects.all()
+    return render(request,'admin_view_product1.html',{'products':product,'wishlist':wishli})
+
 
 
 # varient management -------------------------------------------
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def view_product_varient(request,pk):
-    if 'email' in request.session:
-        product = products.objects.get(id = pk)
-        print(product.varient.zerotothreeM)
-        return render(request,'admin_view_product_varient.html',{'details':product})
-    return redirect(user_login)
+    product = products.objects.get(id = pk)
+    print(product.varient.zerotothreeM)
+    return render(request,'admin_view_product_varient.html',{'details':product})
 
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def edit_varient(request,pk):
-    if 'email' in request.session:
-        product = products.objects.get(id = pk)
-        col = color.objects.all()
-        return render(request,'admin_edit_varient.html',{'details':product,'color':col})
-    return redirect(user_login)
+    product = products.objects.get(id = pk)
+    col = color.objects.all()
+    return render(request,'admin_edit_varient.html',{'details':product,'color':col})
 
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def update_varient(request,pk):
-    if 'email' in request.session:
         if request.method=='POST':
             pro = products.objects.get(id=pk)
         
@@ -1075,15 +1027,14 @@ def update_varient(request,pk):
             return render(request,'admin_view_product_varient.html',{'details':product})
            
         return redirect(user_login)
-    return redirect(user_login)
+   
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def back_product(request):
-    if 'email' in request.session:
-        return redirect(showproduct)
-    return redirect(user_login)
+    return redirect(showproduct)
+    
 
 
 
@@ -1091,29 +1042,27 @@ def back_product(request):
 
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def view_brand(request):
-    if 'email' in request.session:
-        brand = brands.objects.all()
-        return render(request,'admin_view_brands.html',{'details':brand})
-    return redirect(user_login)
+   
+    brand = brands.objects.all()
+    return render(request,'admin_view_brands.html',{'details':brand})
+    
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def add_brand_page(request):
-    if 'email' in request.session:
-        return render(request,'admin_add_brand.html')
-    return redirect(user_login)
+    return render(request,'admin_add_brand.html')
+    
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def add_brand(request):
-    print("thish is working")
-    if 'email' in request.session:
+    if request.method == 'POST':    
         name = request.POST.get('name')
         desc = request.POST.get('description')
         specs = request.POST.get('specs')
@@ -1130,9 +1079,6 @@ def add_brand(request):
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def add_brand_js(request):
-    
-    if 'email' in request.session:
-        print("ok")
         br = brands()
         print(request.GET.get('brandname'))
         br.name = request.GET.get('brandname')
@@ -1143,22 +1089,21 @@ def add_brand_js(request):
         print(request.FILES['logo'])
         #br.save()
         return JsonResponse("ok")
-    return redirect(user_login)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def edit_brand_page(request,pk):
-    if 'email' in request.session:
-        brand = brands.objects.get(id=pk)
-        return render(request,'admin_edit_brand.html',{'details':brand})
-    return redirect(user_login)
+    brand = brands.objects.get(id=pk)
+    return render(request,'admin_edit_brand.html',{'details':brand})
+  
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)  
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)  
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')   
 def update_brand(request,pk):
-    if 'email' in request.session:
+    if request.method == 'POST':
         brand = brands.objects.get(id = pk)
         brand.name = request.POST.get('name')
         brand.description = request.POST.get('description')
@@ -1177,87 +1122,91 @@ def update_brand(request,pk):
 
 # admin View all orders and update status---------------------------------
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def view_order(request):
-    if 'email' in request.session:
-        orders = order.objects.all().order_by('-pk')
-        return render(request,'admin_view_order.html',{'orders':orders})
-    return redirect(user_login)
+    orders = order.objects.all().order_by('-pk')
+    return render(request,'admin_view_order.html',{'orders':orders})
+    
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def orderDetails(request,pk):
-    if 'email' in request.session:
-        ord = order.objects.get(id=pk)
-        orders = order_items.objects.filter(order=ord)
-        return render(request,'admin_view_order_detailed.html',{'orders':orders,'ord':ord})
+    ord = order.objects.get(id=pk)
+    orders = order_items.objects.filter(order=ord)
+    return render(request,'admin_view_order_detailed.html',{'orders':orders,'ord':ord})
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def order_processed(request,pk):
-    if 'email' in request.session:
-        orders = order.objects.get(id=pk)
-        orders.order_status = 'Processed'
-        orders.save()
-        return redirect(view_order)
-    return redirect(user_login)
+    orders = order.objects.get(id=pk)
+    orders.order_status = 'Processed'
+    orders.save()
+    return redirect(view_order)
+   
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def order_shipping(request,pk):
-    if 'email' in request.session:
-        orders = order.objects.get(id=pk)
-        orders.order_status = 'Shipped'
-        orders.save()
-        return redirect(view_order)  
-    return redirect(user_login)
+    orders = order.objects.get(id=pk)
+    orders.order_status = 'Shipped'
+    orders.save()
+    return redirect(view_order)  
+   
 
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def order_deliver(request,pk):
-    if 'email' in request.session:
-        orders = order.objects.get(id=pk)
-        orders.order_status = 'Delivered'
-        orders.save()
-        return redirect(view_order) 
-    return redirect(user_login) 
+    orders = order.objects.get(id=pk)
+    orders.order_status = 'Delivered'
+    orders.save()
+    return redirect(view_order) 
+   
 
 
 # user selecr from menu shop by size--------------
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def menulinkSize(request):
-    if 'email' in request.session:
-        if request.GET.get('size'):
-            size = request.GET.get('size')
-            if 'cat' in request.session:
-                del request.session['cat']
-            annotations = {f'{size}_value': F('varient__' + size)}
-            filtered_products = products.objects.annotate(**annotations).filter(**{f'{size}_value__gt': 0})
-            return render(request,'4.both_type_products.html',{'details':filtered_products ,})
+    if request.GET.get('size'):
+        size = request.GET.get('size')
+        if 'cat' in request.session:
+            del request.session['cat']
+        annotations = {f'{size}_value': F('varient__' + size)}
+        filtered_products = products.objects.annotate(**annotations).filter(**{f'{size}_value__gt': 0})
+        return render(request,'4.both_type_products.html',{'details':filtered_products ,})
     return redirect(user_login)
 
 # User select from category ------------------
         
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def detailpage(request,pk):
-    if 'email' in request.session:
-        email = request.session['email']
-        uid =  User.objects.get(email=email).pk
+        uid =  request.user.id
         request.session['cat']=pk
         print("thishs",request.session['cat'])
         boyscategory =categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Boys")).order_by('-id')
+        product = categories.objects.all().exclude(image='')
+        #boyscategory =categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Boys")).order_by('-id')
+        # boyscategory =categories.objects.all().filter(gender="Boys").order_by('-id')
         
+        girlscategory = categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Girls")).order_by('-id')
+        brand = brands.objects.all()
+        context1 = {'products':product}
+        mydata = User.objects.filter(id= uid).values()
+        context2 = {'mydata':mydata}
+        data ={'products':product,'mydata':mydata,
+               'brand':brand,
+               'boyscateg':boyscategory,
+               'girlscateg':girlscategory}
         types = categories.objects.get(id = pk)
         cattype = ''
         details = products.objects.all().filter(category=pk).order_by('-id')
@@ -1267,25 +1216,24 @@ def detailpage(request,pk):
         boyscategory1 =categories.objects.all().filter(gender="Boys").order_by('-id')
         
         if cattype == '1':
-            return render(request,'2.shirt_type_products.html',{'details':details ,'wishlist':wishli,'boyscateg':boyscategory1})
+            return render(request,'2.shirt_type_products.html',{'details':details ,'wishlist':wishli,'boyscateg':boyscategory1,'data':data})
         elif cattype == '2':
-            return render(request,'3.pants_type_products.html',{'details':details ,'wishlist':wishli,'boyscateg':boyscategory1})
+            return render(request,'3.pants_type_products.html',{'details':details ,'wishlist':wishli,'boyscateg':boyscategory1,'data':data})
         else: 
-            return render(request,'4.both_type_products.html',{'details':details ,'wishlist':wishli,'boyscateg':boyscategory1})
+            return render(request,'4.both_type_products.html',{'details':details ,'wishlist':wishli,'boyscateg':boyscategory1,'data':data})
        
 
-    return redirect(user_login)
-
+   
 
 
 
 
 
 #filtered products---------------------
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def filter_data(request):
-    if 'email' in request.session:
+    if request.method == 'POST':
         if 'cat' in request.session:
             cat = request.session['cat']
             allproduct = products.objects.all().filter(category=cat).order_by('-id')
@@ -1336,12 +1284,10 @@ def filter_data(request):
         return JsonResponse({'data':t})
     return redirect(user_login)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def selectoneproduct(request,pk):
-    if 'email' in request.session:
-        email=request.session['email']
-        userid = User.objects.get(email=email).pk
+        userid = request.user.id
         if 'size' in request.GET:
             print(request.GET)
         size = request.GET.get('size')
@@ -1396,17 +1342,15 @@ def selectoneproduct(request,pk):
         print(default)
 
         return render(request,'oneprodwithlogin.html',{'details':details,'wish':wishlist,'cart':cartdata,'default':default})
-    return redirect(user_login)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def oneprod_filter(request):
-    if 'email' in request.session:
+    if request.method == 'POST':
         default = request.POST.get('size')
         pk = request.POST.get('pid')
-        print("ok")
-        email=request.session['email']
-        userid = User.objects.get(email=email).pk
+        userid = request.user.id
         details = products.objects.all().filter(id=pk)
         wish = whishlist.objects.all().filter(product=pk,user=userid,size=default)
         car = cart.objects.all().filter(product=pk,user=userid) # for goto cart button
@@ -1433,56 +1377,50 @@ def oneproduct(request,pk):  # one product details with out login
 
 
 # add to wish list----------------------------------------------------------------
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def add_to_wishlist(request):
-    if 'email' in request.session:
-        if request.method == 'POST':
-            product_id = request.POST.get('product_id')
-            email =  request.session['email'] 
-            uobject = User.objects.get(email=email)
-            probj = products.objects.get(id=product_id)
-            size = request.POST.get('size')
-            print(size)
+   
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        uobject = request.user
+        probj = products.objects.get(id=product_id)
+        size = request.POST.get('size')
+        print(size)
 
-            data = {}
-            checking =whishlist.objects.filter(product=product_id,user=uobject.id,size=size).count()
-            if checking > 0:
-                data = {'bool':False}
-            else:
-                wish = whishlist()
-                wish.user=uobject
-                wish.product=probj
-                wish.size = size
-                wish.save()
-                data={'bool':True}
-            return JsonResponse(data)
+        data = {}
+        checking =whishlist.objects.filter(product=product_id,user=uobject.id,size=size).count()
+        if checking > 0:
+            data = {'bool':False}
+        else:
+            wish = whishlist()
+            wish.user=uobject
+            wish.product=probj
+            wish.size = size
+            wish.save()
+            data={'bool':True}
+        return JsonResponse(data)
     return redirect(user_login)
 
-        
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+# remove from wishlist       
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def remove_from_wishlist(request):
-    if 'email' in request.session:   
-        if request.method == 'POST':
-            product_id = request.POST.get('product_id')
-            email = request.session['email']
-            user = User.objects.get(email=email)
-            print("this is ",product_id)
-            wish = whishlist.objects.filter(user=user.id,product=product_id)
-            print(wish)
-            wish.delete()
-            data = {'bool':True}
-            return JsonResponse(data)
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        user = request.user
+        wish = whishlist.objects.filter(user=user.id,product=product_id)
+        print(wish)
+        wish.delete()
+        data = {'bool':True}
+        return JsonResponse(data)
     return redirect(user_login)
 
-
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+# view wishlist
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def wishlistpage(request):
-    if 'email' in request.session:
-        email =  request.session['email'] 
-        uid = User.objects.get(email=email)
+        uid = request.user.id
         details = whishlist.objects.all().filter(user=uid.id)
         if details:
             starter = False
@@ -1490,17 +1428,14 @@ def wishlistpage(request):
             starter = True
 
         return render(request,'userwishlist.html',{'details':details,'start':starter})
-    return redirect(user_login)
     #return render(request,'wishlist.html',{'combined_querysets': combined_querysets})
 
 # add to cart --------------------------------------------------------
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def add_to_cart(request):
-    if 'email' in request.session:
-        if request.method == 'POST':
-            email =  request.session['email'] 
-            uobject = User.objects.get(email=email)
+    if request.method == 'POST':
+            uobject = request.user
             product_id = request.POST.get('product_id')
             probj = products.objects.get(id=product_id)
           
@@ -1542,13 +1477,12 @@ def add_to_cart(request):
                 data={'bool':True}
             return JsonResponse(data)
     return redirect(user_login)
-    
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)  
+
+# View Cart-------------------------------------   
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)  
 @login_required(login_url='user_login')   
 def showcart(request):
-    if 'email' in request.session:
-        email = request.session['email']
-        user = User.objects.get(email=email)
+        user = request.user
         cart_items = cart.objects.all().filter(user=user.id)
         total_amount = 0
         if not cart_items:
@@ -1563,13 +1497,11 @@ def showcart(request):
         alladdr = address.objects.all().filter(user=user.id)
         addr = address.objects.get(user=user,default_value=True)
         return render(request,'usercart.html' ,{'cart_items': cart_items ,'total_amount': total_amount,'start':starter,'address':addr,'alladdress':alladdr})
-    return redirect(user_login)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def update_cart_item(request, item_id):
-    if 'email' in request.session:
-        user = request.session['email']
         cart_item = cart.objects.get(id=item_id)
         new_quantity = int(request.POST.get('quantity'))
         print("quatinty",new_quantity)
@@ -1577,7 +1509,7 @@ def update_cart_item(request, item_id):
         print(new_quantity)
         cart_item.quantity = new_quantity
         cart_item.save()
-        userid=User.objects.get(email=user)
+        userid=request.user
         # Recalculate the total amount
         cart_items = cart.objects.filter(user=userid.id)
         total_amount = 0
@@ -1594,149 +1526,274 @@ def update_cart_item(request, item_id):
             'total_amount': total_amount,  
             'item_total_amount': cart_item.product.Offer_price * cart_item.quantity
         })
-    return redirect(user_login)
+   
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def remove_cart_item(request, item_id):
-    if 'email' in request.session:
-        user = request.session['email']
-        cart_item = cart.objects.get(id=item_id)
-        cart_item.delete()
-        userid=User.objects.get(email=user)
-        # Recalculate the total amount
-        cart_items =  cart.objects.filter(user=userid.id)
-        total_amount = sum(item.product.Offer_price * item.quantity for item in cart_items)
-        # Return the updated total amount as JSON
-        return JsonResponse({'total_amount': total_amount})
-    return redirect(user_login)
+    cart_item = cart.objects.get(id=item_id)
+    cart_item.delete()
+    userid=request.user
+    # Recalculate the total amount
+    cart_items =  cart.objects.filter(user=userid.id)
+    total_amount = sum(item.product.Offer_price * item.quantity for item in cart_items)
+    # Return the updated total amount as JSON
+    return JsonResponse({'total_amount': total_amount})
+  
 
 
 
 
 # order -----------------------------------------------------------------
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+import razorpay
+
+client = razorpay.Client(
+    auth=("rzp_test_SFHBIg6h1wqsX0","7yXU5wPUDkBQMXpzNMzqoNmp" )
+)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def paytoproceed(request):
-    if 'email' in request.session:
-        user = request.session['email']
-        user=User.objects.get(email=user)
+        user=request.user
         cart_items =  cart.objects.filter(user=user.id)
         total = 0
         for item in cart_items:
             total = total+item.product.Offer_price*item.quantity
             size_available = getattr(item.product.varient, item.size)
-            print("thishs",size_available)
-
-        
             if size_available is  size_available == 0:
-          
                 return JsonResponse({"error":"size not available"})
-            
-
-        print(total)
-
-        return JsonResponse({"total":total})
-    return redirect(user_login)
+        total = float(total)
+        order_data = {
+        "amount": int(total * 100),
+        "currency": "INR",
+        "payment_capture": 1
+            }
+        print("total",total)
+        order = client.order.create(order_data)
+        print("order",order)
+        return JsonResponse({
+        "order_id": order["id"],
+        "total": total,
+        "key": "rzp_test_SFHBIg6h1wqsX0"
+    })
+ 
 
 # Order updating for the link from order history
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def order_product_from_orderhistory(request):
-    if 'email' in request.session:
-        user = request.session['email']
-        paymentId=request.GET.get('payment_id')
-        cpnid = request.GET.get('cid')
-        paymentmode = request.GET.get('paymentmode')
-        totalamount = request.GET.get('total') 
-        ordid= request.GET.get('ord') 
-        user=User.objects.get(email=user)
-        addr = address.objects.get(user=user.id,default_value=True)
-        orders = order.objects.get(id=ordid)
-        orders.user=user
-        orders.user_name = addr.name
-        orders.user_housename = addr.house_name
-        orders.user_street = addr.street_name
-        if addr.landmark:
-            orders.user_landmark = addr.landmark
-        orders.user_pincode = addr.pincode
-        orders.user_city = addr.city
-        orders.user_state = addr.state
-        orders.user_country =addr.country
-        orders.user_mobile = addr.mobile 
-        orders.total_amount = totalamount
-        orders.payment_method = paymentmode
-        if paymentId:
-            orders.payment_id = paymentId
-        if cpnid:
-            coupnobj = coupon.objects.get(id = cpnid)
-            orders.coupon = coupnobj
-        orders.save()
-        return JsonResponse({"status":"success"}) 
-    return redirect(user_login)
+    user = request.user
+    paymentId=request.GET.get('payment_id')
+    cpnid = request.GET.get('cid')
+    paymentmode = request.GET.get('paymentmode')
+    totalamount = request.GET.get('total') 
+    ordid= request.GET.get('ord') 
+    user=User.objects.get(id=user.id)
+    addr = address.objects.get(user=user.id,default_value=True)
+    orders = order.objects.get(id=ordid)
+    orders.user=user
+    orders.user_name = addr.name
+    orders.user_housename = addr.house_name
+    orders.user_street = addr.street_name
+    if addr.landmark:
+        orders.user_landmark = addr.landmark
+    orders.user_pincode = addr.pincode
+    orders.user_city = addr.city
+    orders.user_state = addr.state
+    orders.user_country =addr.country
+    orders.user_mobile = addr.mobile 
+    orders.total_amount = totalamount
+    orders.payment_method = paymentmode
+    if paymentId:
+        orders.payment_id = paymentId
+    if cpnid:
+        coupnobj = coupon.objects.get(id = cpnid)
+        orders.coupon = coupnobj
+    orders.save()
+    return JsonResponse({"status":"success"}) 
 
 
+from razorpay.errors import SignatureVerificationError
 
 
-
-
-
-
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
-@login_required(login_url='user_login') 
+@cache_control(no_cache=True, must_revalidate=True, no_store=True)
+@login_required(login_url='user_login')
 def order_product(request):
-    if 'email' in request.session:
-        user = request.session['email']
-        paymentId=request.GET.get('payment_id')
-        cpnid = 0 # initializing coupon id
-     
-        print("thishs coupon id",cpnid)
 
-        if request.method == 'POST':
-            paymentmode = request.POST.get('paymentmode')
-            totalamount = request.POST.get('total')
-            cpnid = request.POST.get('cid')
-        else:
-            paymentmode = request.GET.get('paymentmode')
-            totalamount = request.GET.get('total')
-            cpnid = request.GET.get('cid')
+    if request.method != "POST":
+        return JsonResponse({"status": "invalid"})
+
+    user = request.user
+
+    payment_id = request.POST.get("razorpay_payment_id")
+    order_id = request.POST.get("razorpay_order_id")
+    signature = request.POST.get("razorpay_signature")
+
+    params = {
+        "razorpay_order_id": order_id,
+        "razorpay_payment_id": payment_id,
+        "razorpay_signature": signature
+    }
+
+    try:
+        # ✅ Verify payment
+        client.utility.verify_payment_signature(params)
+
+        # ✅ Recalculate total from DB
+        cart_items = cart.objects.filter(user=user.id)
+
+        totalamount = 0
+        for item in cart_items:
+            totalamount += item.product.Offer_price * item.quantity
+
+        addr = address.objects.get(user=user.id, default_value=True)
+
+        orders = order.objects.create(
+            user=user,
+            user_name=addr.name,
+            user_housename=addr.house_name,
+            user_street=addr.street_name,
+            user_landmark=addr.landmark,
+            user_pincode=addr.pincode,
+            user_city=addr.city,
+            user_state=addr.state,
+            user_country=addr.country,
+            user_mobile=addr.mobile,
+            total_amount=totalamount,
+            payment_method="Razorpay",
+            payment_id=payment_id
+        )
+
+        # ✅ Save order items
+        for item in cart_items:
+
+            order_items.objects.create(
+                order=orders,
+                product=item.product,
+                size=item.size,
+                quantity=item.quantity,
+                price=item.product.price,
+                deal=item.product.deal,
+                Offer_price=item.product.Offer_price,
+                total=item.product.Offer_price * item.quantity
+            )
+
+            product = products.objects.get(id=item.product.id)
+            varient = product.varient
+
+            varient.total = F('total') - item.quantity
+            setattr(varient, item.size, F(item.size) - item.quantity)
+
+            varient.save()
+
+        # ✅ Clear cart
+        cart_items.delete()
+
+        return JsonResponse({"status": "success"})
+
+    except SignatureVerificationError:
+
+        return JsonResponse({"status": "failed"})
+
+    except Exception as e:
+
+        print("Order Error:", e)
+        return JsonResponse({"status": "error"})
+
+ 
+# from razorpay.errors import SignatureVerificationError
+
+# @cache_control(no_cache=True,must_revalidate=True,no_store=True)
+# @login_required(login_url='user_login') 
+# def order_product(request):
+    
+#         user = request.user
+#         paymentId=request.GET.get('payment_id')
+#         cpnid = 0 # initializing coupon id
+#         if request.method == 'POST':
+#             payment_id = request.POST.get("razorpay_payment_id")
+#             order_id = request.POST.get("razorpay_order_id")
+#             signature = request.POST.get("razorpay_signature")
+#             # paymentmode = request.POST.get('paymentmode')
+#             totalamount = request.POST.get('total')
+#             # cpnid = request.POST.get('cid')
+#             client = razorpay.Client(auth=("rzp_test_FWtXGgNxjWZOLx", "uaFKwwt8Ryf6CmUdkZvud7US"))
+#             params = {
+#                         "razorpay_order_id": order_id,
+#                         "razorpay_payment_id": payment_id,
+#                         "razorpay_signature": signature
+#                         }
+
+#             try:
+#                 client.utility.verify_payment_signature(params)
+
+#         # ✅ Payment verified
+#         # Save order in DB
+#                 cart_items =  cart.objects.filter(user=user.id)
+#                 addr = address.objects.get(user=user.id,default_value=True)
+#                 orders = order()
+#                 orders.user=user
+#                 orders.user_name = addr.name
+#                 orders.user_housename = addr.house_name
+#                 orders.user_street = addr.street_name
+#                 if addr.landmark:
+#                     orders.user_landmark = addr.landmark
+#                 orders.user_pincode = addr.pincode
+#                 orders.user_city = addr.city
+#                 orders.user_state = addr.state
+#                 orders.user_country =addr.country
+#                 orders.user_mobile = addr.mobile 
+#                 orders.total_amount = totalamount
+#                 orders.payment_method = "Razorpay"
+#                 if paymentId:
+#                     orders.payment_id = paymentId
+#                 print("xoupon is",cpnid)
+#                 if cpnid:
+#                     coupnobj = coupon.objects.get(id = cpnid)
+#                     orders.coupon = coupnobj
+#                 orders.save()
+#                 order_obj = order.objects.get(id=orders.pk)
+#                 for item in cart_items:    
+                    
+#                     orders_items = order_items()
+#                     orders_items.order = order_obj
+#                     orders_items.product = item.product
+#                     orders_items.size = item.size
+#                     orders_items.quantity = item.quantity
+#                     orders_items.price = item.product.price
+#                     orders_items.deal = item.product.deal
+#                     orders_items.Offer_price = item.product.Offer_price
+#                     orders_items.total = item.product.Offer_price*item.quantity
+#                     orders_items.save()
+
+#                     product = products.objects.get(id=item.product.id)
+#                     varient = product.varient
+#                     varient.total= F('total')-item.quantity
+#                     setattr(varient, item.size, F(item.size) - item.quantity)
+#                     varient.save()
+#                     cart_items.delete()
+
+#                 return JsonResponse({"status": "success"})
+#             except SignatureVerificationError:
+
+#         # ❌ Fake / Failed payment
+#                 return JsonResponse({"status": "failed"})
+        # else:
+        #     paymentmode = request.GET.get('paymentmode')
+        #     totalamount = request.GET.get('total')
+        #     cpnid = request.GET.get('cid')
         
-        print(paymentmode)
-        print(totalamount)
+
         # if request.POST:
         #     print("thishs",list(request.POST.keys())[1])
         #     totalamount = list(request.POST.keys())[1]
         
-        user=User.objects.get(email=user)
-        cart_items =  cart.objects.filter(user=user.id)
-        addr = address.objects.get(user=user.id,default_value=True)
-        orders = order()
-        orders.user=user
-        orders.user_name = addr.name
-        orders.user_housename = addr.house_name
-        orders.user_street = addr.street_name
-        if addr.landmark:
-            orders.user_landmark = addr.landmark
-        orders.user_pincode = addr.pincode
-        orders.user_city = addr.city
-        orders.user_state = addr.state
-        orders.user_country =addr.country
-        orders.user_mobile = addr.mobile 
-        orders.total_amount = totalamount
-        orders.payment_method = paymentmode
-        if paymentId:
-            orders.payment_id = paymentId
-        print("xoupon is",cpnid)
-        if cpnid:
-            coupnobj = coupon.objects.get(id = cpnid)
-            orders.coupon = coupnobj
-        orders.save()
+       
        
 
         
-        print(paymentId)
+ 
        
             # print(item.product.Offer_price)
             # if item.product.varient.__getattribute__(item.size) > 0:
@@ -1750,52 +1807,31 @@ def order_product(request):
                 # .Offer_price=item.product.Offer_price
         
                 # .total = total+item.product.Offer_price*item.quantity
-        order_obj = order.objects.get(id=orders.pk)
-        for item in cart_items:    
-            
-            orders_items = order_items()
-            orders_items.order = order_obj
-            orders_items.product = item.product
-            orders_items.size = item.size
-            orders_items.quantity = item.quantity
-            orders_items.price = item.product.price
-            orders_items.deal = item.product.deal
-            orders_items.Offer_price = item.product.Offer_price
-            orders_items.total = item.product.Offer_price*item.quantity
-            orders_items.save()
-
-            product = products.objects.get(id=item.product.id)
-            varient = product.varient
-            varient.total= F('total')-item.quantity
-            setattr(varient, item.size, F(item.size) - item.quantity)
-            varient.save()
-            cart_items.delete()
-
-        if paymentmode == "Paid by Razorpay":
-            print("ok")
-            return JsonResponse({"status":"success"})
-        else:
-            return JsonResponse({"status":"success"})               
        
-    return redirect(user_login)
+        # if paymentmode == "Paid by Razorpay":
+        #     print("ok")
+        #     return JsonResponse({"status":"success"})
+        # else:
+        #     return JsonResponse({"status":"success"})               
+       
+    
 
 # Admin coupon managemnt---------------------------------
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
 def show_coupon(request):
     coupons = coupon.objects.all()
     return render(request,'admin_view_coupon.html',{'coupons':coupons})
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
 def add_coupon_page(request):
-    if 'email' in request.session:
-        return render(request,'admin_add_coupon.html')
-    return redirect(user_login)
+    return render(request,'admin_add_coupon.html')
+   
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
 def add_coupon(request):
@@ -1833,7 +1869,7 @@ def convert_to_standard_date_format(date_object):
     # Parse the date string to a datetime object
     return date_object.strftime('%Y-%m-%d')
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
 def show_edit_couponpage(request,pk):
@@ -1843,7 +1879,7 @@ def show_edit_couponpage(request,pk):
     return render(request, 'admin_edit_coupon.html', {'coupons': cop,'end_date':end_date_standerd, 'start_date_standard_format': start_date_standard_format})
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
 def update_coupon(request,pk):
@@ -1876,23 +1912,21 @@ def update_coupon(request,pk):
         messages.info(request,'Updated success')
         return render(request, 'admin_edit_coupon.html', {'coupons': cop,'end_date':cop.end_date, 'start_date_standard_format': cop.start_date})
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def delete_coupon(request,pk):
-    if 'email' in request.session:
-        instance= coupon.objects.get(pk=pk)
-        instance.soft_delete()
-        return redirect(view_category)
-    return redirect(user_login)
+    instance= coupon.objects.get(pk=pk)
+    instance.soft_delete()
+    return redirect(view_category)
+    
 
 
 # coupon ----------------------------------
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def coupon_check(request):
-    if 'email' in request.session:
         try:
             total = request.GET.get('total')
             if 'couponId' in request.GET:
@@ -1908,8 +1942,8 @@ def coupon_check(request):
                 return JsonResponse({'error':'Coupon Expired'})
             elif coupon_obj.min_amount > float(total):
                 return JsonResponse({'error':'Minimum amount should be'+str(coupon_obj.min_amount)})
-            email = request.session['email']
-            user = User.objects.get(email=email)
+           
+            user = request.user
             orders = order.objects.filter(user=user, coupon=coupon_obj.id).exclude(payment_method='Pending') # checking if the user already used this coupon
             if orders.exists():
                 return JsonResponse({'error':"You have redeemed the Coupon"})
@@ -1919,11 +1953,9 @@ def coupon_check(request):
             return JsonResponse({'error':'Invalid Coupon Code'})
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def confirmorder(request):
-    if 'email' in request.session:
-        print(request.method)
         current_date = datetime.now().date()
         couponDis = []
         couponId = 0
@@ -1932,8 +1964,7 @@ def confirmorder(request):
         discount = 0
         total=0
         if request.method == 'POST':
-            email = request.session['email']
-            user = User.objects.get(email=email)
+            user = request.user
             addr = address.objects.get(user=user.id,default_value=True)
             alladdr = address.objects.all().filter(user=user.id)
             id = request.POST.get('id')
@@ -1986,8 +2017,7 @@ def confirmorder(request):
             if couponId != 0:
                 couponDis = coupon.objects.get(id=couponId)
                 dispercentage = float(couponDis.discount)
-            email = request.session['email']
-            user = User.objects.get(email=email)
+            user = request.user
             cart_items = cart.objects.all().filter(user=user.id)
             addr = address.objects.get(user=user.id,default_value=True)
             alladdr = address.objects.all().filter(user=user.id)
@@ -2017,34 +2047,32 @@ def confirmorder(request):
                     }
 
             return render(request,'user_confirmcart.html' ,data)
-    return redirect(user_login)
+   
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def orderhistory(request):
-    if 'email' in request.session:
-        email= request.session['email']
-        user = User.objects.get(email=email)
-        details = order.objects.filter(user=user.id).order_by('-id').exclude(Q(order_status='Cancelled') | Q(order_status='Returned') | Q(order_status ='Cancelled by Admin')).all()
-        print(details)
-        if details :
-            none_details = True
-        else:
-            none_details = False
+    user = request.user
+    details = order.objects.filter(user=user.id).order_by('-id').exclude(Q(order_status='Cancelled') | Q(order_status='Returned') | Q(order_status ='Cancelled by Admin')).all()
+    print(details)
+    if details :
+        none_details = True
+    else:
+        none_details = False
 
-        return render(request,'user_orderhistory.html',{'none_details':none_details,'details':details})
-    return redirect(user_login)
+    return render(request,'user_orderhistory.html',{'none_details':none_details,'details':details})
+ 
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def orderItems(request,pk):
-    if 'email' in request.session:
-        orderid = order.objects.get(id = pk)
-        order_item = order_items.objects.all().filter(order=orderid).order_by('-order__id')
-        return render(request,'user_order_item.html',{'orders':order_item,'details':orderid})
-    return redirect(user_login)
+    user = request.user
+    orderid = order.objects.get(id = pk,user = user)
+    order_item = order_items.objects.all().filter(order=orderid).order_by('-order__id')
+    return render(request,'user_order_item.html',{'orders':order_item,'details':orderid})
+   
 
 # Download Invoice------------------------------------
 
@@ -2078,30 +2106,28 @@ def invoice_pdf(request,pk):
 
  #--Return a product-----------------------------------------
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def userreturnPage(request,pk):
-    if 'email' in request.session:
-        if request.method == 'POST':
-            orders = order.objects.get(id = pk)
+    if request.method == 'POST':
+        orders = order.objects.get(id = pk)
         
-            if 'return' in request.POST:
-                s = 1
-            else:
-                s = 2
+        if 'return' in request.POST:
+            s = 1
+        else:
+            s = 2
        
-            return render(request,'user_returnproductPpage.html',{'orders':orders,'s':s})
-        return redirect(user_login)
+        return render(request,'user_returnproductPpage.html',{'orders':orders,'s':s})
     return redirect(user_login)
+  
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def returnOrder(request,pk):
-    if 'email' in request.session:
-        if request.method == 'POST':
+    if request.method == 'POST':
             type = request.POST.get('type')
-            user = User.objects.get(email = request.session['email'])
+            user = request.user
             ord = order.objects.get(id = pk)
             ordproduct = order_items.objects.filter(order__id = pk).all()
             print(ordproduct.count())
@@ -2137,15 +2163,12 @@ def returnOrder(request,pk):
     return redirect(user_login)
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
+@user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def admin_cancelOrder(request):
-    if 'email' in request.session:
-        print("ok")
         pk = request.POST.get('id') 
-        
         ord = order.objects.get(id = pk)
-
         user = User.objects.get(email = ord.user)
         returnOrder = return_order()
         returnOrder.status = 'Cancelled by Admin'         
@@ -2164,36 +2187,45 @@ def admin_cancelOrder(request):
 
         return JsonResponse({'success':'success'})
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
-def useraccount(request):
-    if 'email' in request.session:
-        email= request.session['email']
-        user = User.objects.get(email=email)
-        print("showing")
-        print(user.id)
-        return render(request,'user_personal.html',{'user':user})
-    return redirect(user_login)
+def useraccount(request):   
+    user = request.user
+    product = categories.objects.all().exclude(image='')
+       #boyscategory =categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Boys")).order_by('-id')
+    boyscategory =categories.objects.all().filter(gender="Boys").order_by('-id')
+        
+    girlscategory = categories.objects.all().filter(Q(gender="Unisex") | Q(gender="Girls")).order_by('-id')
+    print(boyscategory)
+    brand = brands.objects.all()
+    context1 = {'products':product}
+    uid = user.id
+    mydata = User.objects.filter(pk= uid).values()
+    context2 = {'mydata':mydata}
+    data ={'products':product,'mydata':mydata,
+               'brand':brand,
+               'boyscateg':boyscategory,
+               'girlscateg':girlscategory}
+    return render(request,'user_personal.html',{'user':user,'data':data})
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def show_returnpage(request):
-    if 'email' in request.session:
-        email= request.session['email']
-        user = User.objects.get(email=email)
-        details = order.objects.filter(user=user,order_status = 'Delivered').all()#exclude(Q(order_status='Cancelled') | Q(order_status='Returned')).all()
-        if details:
-            none_details = True
-        else:
-            none_details = False
-        print(none_details)
-        return render(request,'user_selectReturn.html',{'details':details,'none_details':none_details})
-    return redirect(user_login)
+    user = request.user
+    details = order.objects.filter(user=user,order_status = 'Delivered').all()#exclude(Q(order_status='Cancelled') | Q(order_status='Returned')).all()
+    if details:
+        none_details = True
+    else:
+        none_details = False
+    print(none_details)
+    return render(request,'user_selectReturn.html',{'details':details,'none_details':none_details})
+  
     
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def editreturnpage(request):
-    if 'email' in request.session:
+    if request.method == 'POST':
         order_id = request.POST.get('prod')
         reason = request.POST.get('reason')
         order_details = order.objects.get(id=order_id)
@@ -2204,64 +2236,59 @@ def editreturnpage(request):
         return redirect(personal_data)
     return redirect(user_login)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def showCancelledOrders(request):
-    if 'email' in request.session:
-        user = User.objects.get(email=request.session['email'])
-        corder = order.objects.filter( Q(user=user) & (Q(order_status='Cancelled') | Q(order_status='Cancelled by Admin'))).order_by('-id')
-        print(corder)
-        return render(request,'user_return_cancelled.html',{'cancelled':corder})
+    
+    user = request.user
+    corder = order.objects.filter( Q(user=user) & (Q(order_status='Cancelled') | Q(order_status='Cancelled by Admin'))).order_by('-id')
+    print(corder)
+    return render(request,'user_return_cancelled.html',{'cancelled':corder})
     
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def showReturnedOrders(request):
-    if 'email' in request.session:
-        user = User.objects.get(email=request.session['email'])
-        corder = order.objects.filter( Q(user=user) & Q(order_status='Returned')).order_by('-id')
-        print(corder)
-        return render(request,'user_returnlist1_page.html',{'cancelled':corder})
+    
+    user = request.user
+    corder = order.objects.filter( Q(user=user) & Q(order_status='Returned')).order_by('-id')
+    print(corder)
+    return render(request,'user_returnlist1_page.html',{'cancelled':corder})
 
 
 
 # User Wallet-----------------------------------------
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def show_wallet(request):
-    if 'email' in request.session:
-        user = User.objects.get(email=request.session['email'])
-        returedOrder = return_order.objects.filter(user = user.id).all()
-        total_returned_amount = returedOrder.aggregate(total_amount=Sum('order__total_amount'))
-        print(total_returned_amount)
-        print(returedOrder)
-        return render(request,'user_wallet.html',{'total':total_returned_amount['total_amount']})
+    user = request.user
+    returedOrder = return_order.objects.filter(user = user.id).all()
+    total_returned_amount = returedOrder.aggregate(total_amount=Sum('order__total_amount'))
+    return render(request,'user_wallet.html',{'total':total_returned_amount['total_amount']})
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @login_required(login_url='user_login') 
 def wallet_transaction(request):
-    if 'email' in request.session:
-        user = User.objects.get(email=request.session['email'])
-        returedOrder = return_order.objects.filter(user = user.id).all()
-        total_returned_amount = returedOrder.aggregate(total_amount=Sum('order__total_amount'))
-        print(total_returned_amount)
-        print(returedOrder)
-        return render(request,'user_wallet_transaction.html',{'order':returedOrder,'total':total_returned_amount['total_amount']})
+    user = request.user
+    returedOrder = return_order.objects.filter(user = user.id).all()
+    total_returned_amount = returedOrder.aggregate(total_amount=Sum('order__total_amount'))
+    print(total_returned_amount)
+    print(returedOrder)
+    return render(request,'user_wallet_transaction.html',{'order':returedOrder,'total':total_returned_amount['total_amount']})
     
 # sales Report-----------------------------
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def downloading_page(request):
-    
-    if 'email' in request.session:
-        return render(request,'admin_sales_report.html')
+    return render(request,'admin_sales_report.html')
 
 
 
 
-
+@user_passes_test(lambda u: u.is_staff)
+@login_required(login_url='user_login')
 def salesReport_pdf(request):
     today = datetime.now().date()
     if request.POST.get('period') == 'oneday':
@@ -2386,7 +2413,6 @@ def salesReport_pdf(request):
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
 def listSales(request):
-    if 'email' in request.session:
         today = datetime.now().date()
         print(request.GET.get('period'))
         print(request.GET.get('details'))
@@ -2431,33 +2457,29 @@ def listSales(request):
 
 
 # admin manage returns.................................................
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login') 
 def show_return(request):
-    if 'email' in request.session:
-        orders = return_order.objects.all().order_by('-order__id')
-        return render(request,'admin_managereturn.html',{'details':orders})
-    return redirect(user_login)
+    orders = return_order.objects.all().order_by('-order__id')
+    return render(request,'admin_managereturn.html',{'details':orders})
+   
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
 def show_returnProduct(request,pk):
-    if 'email' in request.session:
-        print(pk)
-        orders = order_items.objects.filter(order__id = pk).order_by('-id').all()
-        ord = return_order.objects.get(order__id = pk)
-        return render(request,'admin_managereturn_products.html',{'details':orders,'id':pk,'stock_status':ord.stock_status})
-    return redirect(user_login)
+    orders = order_items.objects.filter(order__id = pk).order_by('-id').all()
+    ord = return_order.objects.get(order__id = pk)
+    return render(request,'admin_managereturn_products.html',{'details':orders,'id':pk,'stock_status':ord.stock_status})
 
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
 def addtostock(request,pk):
-  
     returnOrder = return_order.objects.get(order__id=pk)
     orderItems = order_items.objects.filter(order__id = returnOrder.order.id)
     for items in orderItems:      
@@ -2476,7 +2498,7 @@ def addtostock(request,pk):
     # var.save()
     return redirect('show_returnProduct',pk)
 
-@cache_control(no_cashe=True,must_revalidate=True,no_store=True)
+@cache_control(no_cache=True,must_revalidate=True,no_store=True)
 @user_passes_test(lambda u: u.is_staff)
 @login_required(login_url='user_login')
 def admin_orderCancelPage(request,pk):

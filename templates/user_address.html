@@ -4,28 +4,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Automatic Carousel</title>
+<title>Firstcry</title>
 
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <link rel="stylesheet" type="text/css" href=" {% static 'styles/css.css' %}" />
 
+   <link rel="stylesheet" type="text/css" href=" {% static 'styles/buttonstyle.css' %}" />
 
-  <link rel="stylesheet" type="text/css" href="{% static 'styles/bootstrap.min.css ' %}">
+ <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
+  <link rel="stylesheet" type="text/css" href="{% static 'styles/bootstrap.min.css' %}">
 
   <link rel="stylesheet" type="text/css" href="{% static 'styles/font-awesome.css' %}">
 
-  <link rel="stylesheet" href="{% static 'styles/templatemo-hexashop.css' %}">
+   <link rel="stylesheet" href="{% static 'styles/templatemo-hexashop.css' %}">
 
   <link rel="stylesheet" href="{% static 'styles/menubar.css' %}">
 
   <link rel="stylesheet" href="{% static 'styles/new.css' %}">
 
-  <link rel="stylesheet" href="{% static 'styles/foruser.css' %}">
-
-  <link rel="stylesheet" href="{% static 'adminstyle2/css/style.css' %}">
-  <!-- End layout styles -->
-  <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
-
-
+  <link rel="stylesheet" href="{% static 'styles/foruser.css' %}"> 
 
 
 <style>
@@ -90,92 +87,7 @@ body {
 </style>
 </head>
 <body>
-<header>
-
-  <div >
-    <div class="mainlogo"><img src="{% static 'images/fc_logo.png' %}" alt="">  
-                    <div class="about">
-                        
-                        <ul>
-
-                          <li><a href="{% url 'logout'%}">Logout | </a></li>
-                          <li><a href="{% url 'useraccount'%}">Account </a><span>|</span></li>
-                            <li><a href="{% url 'wishlist' %}">Wishlist </a><span>|</span></li>
-                            <li><a href="{% url 'cart' %}">Cart</a></li>
-            
-                        </ul>
-                    </div>
-        </div>
-    </div>   
-
-    <!-- ***** Header Area End ***** -->
-
-  <!-- navmenu -->
-    <nav >
-        <div class="wrapper">
-          <input type="radio" name="slider" id="menu-btn">
-          <input type="radio" name="slider" id="close-btn">
-          <ul class="nav-links">
-            <label for="close-btn" class="btn close-btn"><i class="fas fa-times"></i></label>
-            <li><a href="{% url 'userhome' %}">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li>
-              <a href="#" class="desktop-item">Dropdown Menu</a>
-              <input type="checkbox" id="showDrop">
-              <label for="showDrop" class="mobile-item">Dropdown Menu</label>
-              <ul class="drop-menu">
-                <li><a href="#">Drop menu 1</a></li>
-                <li><a href="#">Drop menu 2</a></li>
-                <li><a href="#">Drop menu 3</a></li>
-                <li><a href="#">Drop menu 4</a></li>
-              </ul>
-            </li>
-            <li>
-              <a href="#" class="desktop-item">Mega Menu</a>
-              <input type="checkbox" id="showMega">
-              <label for="showMega" class="mobile-item">Mega Menu</label>
-              <div class="mega-box">
-                <div class="content">
-                  <div class="row">
-                
-                  </div>
-                  <div class="row">
-                    <header>Design Services</header>
-                    <ul class="mega-links">
-                      <li><a href="#">Graphics</a></li>
-                      <li><a href="#">Vectors</a></li>
-                      <li><a href="#">Business cards</a></li>
-                      <li><a href="#">Custom logo</a></li>
-                    </ul>
-                  </div>
-                  <div class="row">
-                    <header>Email Services</header>
-                    <ul class="mega-links">
-                      <li><a href="#">Personal Email</a></li>
-                      <li><a href="#">Business Email</a></li>
-                      <li><a href="#">Mobile Email</a></li>
-                      <li><a href="#">Web Marketing</a></li>
-                    </ul>
-                  </div>
-                  <div class="row">
-                    <header>Security services</header>
-                    <ul class="mega-links">
-                      <li><a href="#">Site Seal</a></li>
-                      <li><a href="#">VPS Hosting</a></li>
-                      <li><a href="#">Privacy Seal</a></li>
-                      <li><a href="#">Website design</a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </li>
-            <li><a href="#">Feedback</a></li>
-          </ul>
-          <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars"></i></label>
-        </div>
-      </nav>
-
-</header>
+{% include "partials/header.html" %}
 <div style="width: 100%; height: 100px;">
 
 </div>
@@ -189,7 +101,7 @@ body {
 
 
   <div >
-    <div class="container" >
+    <div class="container "  >
     <div style="display: flex; background-color: #ffffff;">
 
        
@@ -297,7 +209,7 @@ body {
                         <tr>
                             <td></td>
                             <td>
-                                <td><button type="submit" class="btn btn-gradient-primary me-2">Submit</button></td>
+                                <td><button type="submit" class="btn1 btn1-gradient-primary me-2">Submit</button></td>
                             </td>
                         </tr>
                     </table>
@@ -321,7 +233,7 @@ body {
              
                <div style=" display: flex; border: 1px solid grey;"  id="view-container-{{items.id}}" >
                 <div class="address"  >
-                    <table  style="width: 800px;">
+                    <table  style="width: 500px;">
                     
                         <tr>
                          
@@ -431,7 +343,7 @@ body {
                                 <td>
                                     <button type="submit" class="btn btn-gradient-primary me-2">Submit</button>
                                     
-                                        <button  type="button" data-user-id="{{items.id}}" class="btn btn-gradient-primary me-2 cancelbutton">cancel</button>
+                                        <button  type="button" data-user-id="{{items.id}}" class="btn1 btn1-gradient-primary me-2 cancelbutton">cancel</button>
                                    
                                 </td>
                             </tr>
@@ -450,7 +362,7 @@ body {
               </div>
               {%endfor%}
               <div id="view-container123">
-              <button onclick="showEditForm()"  type="button"  class="btn btn-gradient-primary me-2">Add Another Address</button>
+              <button onclick="showEditForm()"  type="button"  class="btn1 btn1-gradient-primary me-2">Add Another Address</button>
             </div>
 
             <!--  hiden div-->
@@ -520,7 +432,7 @@ body {
                         <td></td>
                         <td>
                             <button type="submit" class="btn btn-gradient-primary me-2">Submit</button>
-                            <button type="button" onclick="saveChanges()" class="btn btn-gradient-primary me-2">Cancel</button>
+                            <button type="button" onclick="saveChanges()" class="btn1 btn1-gradient-primary me-2">Cancel</button>
                         </td>
                     </tr>
                 </table>

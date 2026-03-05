@@ -4,10 +4,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Automatic Carousel</title>
-
+  <title>Firstcry</title>
+   <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
   <link rel="stylesheet" type="text/css" href=" {% static 'styles/css.css' %}" />
-
+<link rel="stylesheet" type="text/css" href=" {% static 'styles/buttonstyle.css' %}" />
 
   <link rel="stylesheet" type="text/css" href="{% static 'styles/bootstrap.min.css' %}">
 
@@ -20,12 +20,6 @@
   <link rel="stylesheet" href="{% static 'styles/new.css' %}">
 
   <link rel="stylesheet" href="{% static 'styles/foruser.css' %}">
-
-  <link rel="stylesheet" href="{% static 'adminstyle2/css/style.css' %}">
-  <!-- End layout styles -->
-  <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
-
-
 
 
 <style>
@@ -84,95 +78,28 @@ body {
     display: none;
 }
 
+/* jQuery validation error text */
+label.error {
+    color: red;
+    font-size: 13px;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Input field border when error */
+input.error {
+    border: 1px solid red;
+}
+
+/* Input field when valid */
+input.valid {
+    border: 1px solid green;
+}
 </style>
 </head>
 <body>
-<header>
 
-  <div >
-    <div class="mainlogo"><img src="{% static 'images/fc_logo.png' %}" alt="">  
-                    <div class="about">
-                        
-                        <ul>
-
-                          <li><a href="{% url 'logout'%}">Logout | </a></li>
-                          <li><a href="{% url 'useraccount'%}">Account </a><span>|</span></li>
-                            <li><a href="{% url 'wishlist' %}">Wishlist </a><span>|</span></li>
-                            <li><a href="{% url 'cart' %}">Cart</a></li>
-            
-                        </ul>
-                    </div>
-        </div>
-    </div>   
-
-    <!-- ***** Header Area End ***** -->
-
-  <!-- navmenu -->
-    <nav >
-        <div class="wrapper">
-          <input type="radio" name="slider" id="menu-btn">
-          <input type="radio" name="slider" id="close-btn">
-          <ul class="nav-links">
-            <label for="close-btn" class="btn close-btn"><i class="fas fa-times"></i></label>
-            <li><a href="{% url 'userhome' %}">Home</a></li>
-            <li><a href="#">About</a></li>
-            <li>
-              <a href="#" class="desktop-item">Dropdown Menu</a>
-              <input type="checkbox" id="showDrop">
-              <label for="showDrop" class="mobile-item">Dropdown Menu</label>
-              <ul class="drop-menu">
-                <li><a href="#">Drop menu 1</a></li>
-                <li><a href="#">Drop menu 2</a></li>
-                <li><a href="#">Drop menu 3</a></li>
-                <li><a href="#">Drop menu 4</a></li>
-              </ul>
-            </li>
-            <li>
-              <a href="#" class="desktop-item">Mega Menu</a>
-              <input type="checkbox" id="showMega">
-              <label for="showMega" class="mobile-item">Mega Menu</label>
-              <div class="mega-box">
-                <div class="content">
-                  <div class="row">
-                
-                  </div>
-                  <div class="row">
-                    <header>Design Services</header>
-                    <ul class="mega-links">
-                      <li><a href="#">Graphics</a></li>
-                      <li><a href="#">Vectors</a></li>
-                      <li><a href="#">Business cards</a></li>
-                      <li><a href="#">Custom logo</a></li>
-                    </ul>
-                  </div>
-                  <div class="row">
-                    <header>Email Services</header>
-                    <ul class="mega-links">
-                      <li><a href="#">Personal Email</a></li>
-                      <li><a href="#">Business Email</a></li>
-                      <li><a href="#">Mobile Email</a></li>
-                      <li><a href="#">Web Marketing</a></li>
-                    </ul>
-                  </div>
-                  <div class="row">
-                    <header>Security services</header>
-                    <ul class="mega-links">
-                      <li><a href="#">Site Seal</a></li>
-                      <li><a href="#">VPS Hosting</a></li>
-                      <li><a href="#">Privacy Seal</a></li>
-                      <li><a href="#">Website design</a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </li>
-            <li><a href="#">Feedback</a></li>
-          </ul>
-          <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars"></i></label>
-        </div>
-      </nav>
-
-</header>
+{% include "partials/header.html" %}
 <div style="width: 100%; height: 100px;">
 
 </div>
@@ -189,7 +116,7 @@ body {
     <div class="container" >
     <div style="display: flex; background-color: #ffffff;">
 
-       
+    
               <div id="menu1234" style="width: 300px;">
                 <h3>My Account</h2>
                   <div style="height: 20px;"></div>
@@ -227,8 +154,9 @@ body {
                <h5 style="margin-left: 5px;">Personal Details</h5>
                <div style=" display: flex;"  id="view-container">
                 <div class="address"  >
-                    <table  style="width: 500px;">
+                    <table  style="width: 500px; ">
                     
+                  
                         <tr>
                             <th style="padding: 15px; width: 200px;">Your name</th>
                             <td style="width: 100px;">{{user.first_name}} &nbsp;&nbsp;{{user.last_name}}</td>
@@ -242,11 +170,13 @@ body {
                             <th style="padding: 15px;">Email</th>
                             <td> {{user.email}}</td>
                         </tr>
+                         
                     </table>
+                     
                 </div>
-                    <div class="payment" style="margin-left: 150px;">
+                    <div class="payment" style="margin-left: 100px;">
                         <button  onclick="showEditForm()" style="border: none;" > <img src="{% static 'images/edit.png'%}"  style="height: 50px; width: 50px;" alt=""></button>
-                        <a onclick="showEditForm()" ></a>
+                       
                     </div>
             </div>
 
@@ -256,31 +186,46 @@ body {
                     new div
                 -->
 
-                <form action="{% url 'update_user' %}" method="post">
+                <form id = "userupdataion" action="{% url 'update_user' %}" method="post">
                     {%csrf_token%}
-                <div   id="edit-container" class="edit-container">
-                    <div class="address"   >
-                        <table  style="width: 800px;" >
-                        
+                <div   id="edit-container" class="edit-container"  >
+                    <div class="address"  >
+                        <table  style="width: 500px;" >
+                     
                             <tr>
-                                <th style="padding: 15px; width: 200px;">Your name</th>
-                                <td style="width: 500px; display: flex;" >
+                                <th colspan="1" style="padding: 15px;  white-space: nowrap;">Your name</th>
+                                <td style="width: 100px;" >
                                     <input type="text" style="width: 200px;" class="form-control form-control-sm" placeholder="First Name" name="firstname" value="{{user.first_name}}">
-                                    &nbsp;&nbsp;
+                                    <span style="color:red;">
+                                                {{ form.firstname.errors.0 }}
+                                    </span>
+                                </td>
+                                <td>
                                     <input type="text" style="width: 200px;" class="form-control form-control-sm" placeholder="Last name" name="lastname" value="{{user.last_name}}">
-                                
-                                
+                                <span style="color:red;">
+                                                {{ form.lastname.errors.0 }}
+                                    </span>
                                 </td>
     
                             </tr>
                             <tr>
-                                <th style="padding: 15px;">Mobile Number</th>
-                                <td>  <input type="text" style="width: 400px;" class="form-control form-control-sm" placeholder="Last name" name="mobile" value=" {{user.mobile}}"></td>
+                                <th colspan="1" style="padding: 15px; width: 500px;white-space: nowrap;">Mobile Number</th>
+                                <td colspan="2">  <input type="text" style="width: 200px;" class="form-control form-control-sm" placeholder="Mobile Number" name="mobile" value="{{user.mobile}}">
+                                <span style="color:red;">
+                                {{ form.mobile.errors.0 }}
+                                </span>
+                                </td>
                             </tr>
                             <tr>
-                                <th style="padding: 15px;">Email</th>
+                                <th colspan="1" style="padding: 15px;">Email</th>
                                 <td> {{user.email}}</td>
-                                <td><button type="submit" class="btn btn-gradient-primary me-2">Submit</button></td>
+                                
+                            </tr>
+                           
+                            <tr>
+                                <td colspan="2"><button type="submit" class="btn1 btn1-gradient-primary me-2">Submit</button></td>
+                                <td> <button type="button" onclick="cancelButton()" class="btn1 btn1-gradient-primary me-2" > Cancel</button></td>
+                                
                             </tr>
                         </table>
                     </div>
@@ -387,19 +332,97 @@ body {
   <script src="{% static 'js/quantity.js' %}"></script>
   <script src="{% static 'js/adding.js' %}"></script>
   
-  
+{% if form.errors %}
+<script>
+    document.getElementById('view-container').style.display = 'none';
+    document.getElementById('edit-container').style.display = 'block';
+</script>
+{% endif %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- jQuery Validation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+
   <script>
     function showEditForm() {
         document.getElementById('view-container').style.display = 'none';
         document.getElementById('edit-container').style.display = 'block';
     }
 
-    function saveChanges() {
-       
+    function cancelButton(){
+        var validator = $("#userupdataion").validate();
+        validator.resetForm();           // removes error messages
+        $("#userupdataion")[0].reset();  //  reset form values
+        document.getElementById('view-container').style.display = 'flex';
+        document.getElementById('edit-container').style.display = 'none';
+    }
 
+    function saveChanges() {
         document.getElementById('view-container').style.display = 'block';
         document.getElementById('edit-container').style.display = 'none';
     }
+
+
+$(function (){
+    $.validator.addMethod("lettersOnly", function(value, element){
+        return this.optional(element) || /^[A-Za-z]+$/.test(value);
+    }, "Only letters are allowed");
+
+    $.validator.addMethod("noRepeatChars", function(value, element){
+        return !/^([A-Za-z])\1+$/.test(value);
+    }, "Enter Valid Name");
+
+    $.validator.addMethod("noRepeatDigits", function(value, element){
+        return !/^(\d)\1+$/.test(value);
+    }, "Enter Valid Phone Number");
+
+    $("#userupdataion").validate({
+        rules:{
+            firstname:{
+                required: true,
+                minlength: 2,
+                lettersOnly: true,
+                noRepeatChars: true
+            },
+            lastname:{
+                required: true,
+                minlength: 2,
+                lettersOnly: true,
+                noRepeatChars: true
+            },
+            mobile:{
+                required: true,
+                digits: true,
+                minlength: 10,
+                maxlength: 10,
+                noRepeatDigits: true
+            }
+        },
+        messages: {
+            firstname: {
+                required: "Enter first name",
+                minlength: "At least 2 letters",
+                lettersOnly: "Only letters allowed",
+                noRepeatChars: "Enter Valid First Name"
+            },
+            lastname: {
+                required: "Enter last name",
+                minlength: "At least 2 letters",
+                lettersOnly: "Only letters allowed",
+                noRepeatChars: "Enter Valid Last Name"
+            },
+            mobile:{
+                required: "Enter Mobile Number",
+                digits: "Only digits allowed",
+                minlength: "Must be 10 digits",
+                maxlength: "Must be 10 digits",
+                noRepeatDigits: "Enter Valid Phone Number"
+            }
+        }
+    });
+});
 </script>
+
   </body>
   </html>

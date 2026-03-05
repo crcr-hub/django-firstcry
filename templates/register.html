@@ -3,11 +3,33 @@
 
 {% block htmlhead %}
 {% load static %}
-<link rel="stylesheet" type="text/css" href="{% static 'styles/registercss.css' %}">    
+<link rel="stylesheet" type="text/css" href="{% static 'styles/registercss.css' %}">   
+ <style>
+
+/* jQuery validation error text */
+label.error {
+    color: red;
+    font-size: 13px;
+    margin-top: 5px;
+    display: block;
+}
+
+/* Input field border when error */
+input.error {
+    border: 1px solid red;
+}
+
+/* Input field when valid */
+input.valid {
+    border: 1px solid green;
+}
+
+</style>
 
 {% endblock htmlhead %} 
 
 {% block content %}
+
 
 
 <div style="height: 100%; width: 50%; margin-top: 100px; margin-left: 50px;">
@@ -18,41 +40,52 @@
   
               
             <div class="content1">
-              <form action="registration" method="post">
+              <form id="registerForm" action="registration" method="post">
                 {% csrf_token %}
                 <div class="user-details1">
                   <div class="input-box1">
                   
                     
                     <span class="details1">First Name </span>
-                    <input type="text" placeholder="Enter your First name" required name="firstname">
+                    <input type="text" placeholder="Enter your First name"  name="firstname">
+                    {% if form.firstname.errors %}
+                        <small class="error-text" style="color: red;">
+                          {{ form.firstname.errors.0 }}
+                        </small>
+                      {% endif %}
                   </div>
                   <div class="input-box1">
                     <span class="details1">Last Name</span>
-                    <input type="text" placeholder="Enter your Last name" required name="lastname">
+                    <input type="text" placeholder="Enter your Last name"  name="lastname">
                   </div>
                   <div class="input-box1">
                     <span class="details1">Email</span>
-                    <input type="text" placeholder="{{email}}" required name="email" value="{{email}}" readonly="readonly">
+                    <input type="text" placeholder="{{email}}"  name="email" value="{{email}}" readonly="readonly">
                   </div>
                   <div class="input-box1">
                     <span class="details1">Phone Number</span>
-                    <input type="text" placeholder="Enter your number" required name="phonenumber">
+                    <input type="text" placeholder="Enter your number"  name="phonenumber">
                   </div>
                   <div class="input-box1">
                     <span class="details1">Password</span>
-                    <input type="password" placeholder="Enter your password" required name="password1">
+                    <input type="password" placeholder="Enter your password"  name="password1">
                   </div>
                   <div class="input-box1">
                     <span class="details1">Confirm Password</span>
-                    <input type="password" placeholder="Confirm your password" required name="password2">
+                    <input type="password" placeholder="Confirm your password"  name="password2">
                   </div>
                 </div>
           
-                <div style="margin-left: 200px;">
-                  {% for message in messages %}
-                  <h6 style="color: red;">{{message}}</h6>
-                  {% endfor %}
+                <div id="backendMessage" style="margin-left: 200px;">
+                  {% if form.errors %}
+                    {% for field in form %}
+                      {% for error in field.errors %}
+                        <h6 style="color:red">{{ error }}</h6>
+                      {% endfor %}
+                    {% endfor %}
+                  {% endif %}
+
+                  
                </div>
              <div style="margin-left: 200px; width: 400px;"> 
               <button class="button-87" style="width: 200px;" type="submit" >Register</button>
@@ -64,4 +97,95 @@
  
 </div>
 
-    {% endblock %}
+{% endblock content %} 
+{% block extrascripts %}
+
+<script>
+$(document).ready(function () {
+
+  // When  types in any input, remove backend error
+  $("#registerForm input").on("input", function () {
+    $("#backendMessage").fadeOut();
+  });
+
+});
+</script>
+
+
+<script>
+$(function () {
+
+  // Custom rule
+  $.validator.addMethod("lettersOnly", function (value, element) {
+    return this.optional(element) || /^[A-Za-z]+$/.test(value);
+  }, "Only letters are allowed");
+
+$.validator.addMethod("noRepeatChars", function (value, element) {
+    return !/^([A-Za-z])\1+$/.test(value);
+}, "Enter valid Name");
+
+$.validator.addMethod("noRepeatDigits", function (value, element) {
+    return !/^(\d)\1+$/.test(value);
+}, "Enter Valid Phone Number");
+
+
+
+  $("#registerForm").validate({
+    rules: {
+      firstname: {
+        required: true,
+        minlength: 2,
+        lettersOnly: true,
+        noRepeatChars:true
+      },
+
+      lastname: {
+        required: true,
+        minlength: 2,
+        lettersOnly: true,
+        noRepeatChars:true
+      },
+
+      phonenumber: {
+        required: true,
+        digits: true,
+        minlength: 10,
+        maxlength: 10,
+        noRepeatDigits:true
+      },
+
+      password1: {
+        required: true,
+        minlength: 6
+      },
+
+      password2: {
+        required: true,
+        equalTo: "[name='password1']"
+      }
+    },
+
+    messages: {
+      firstname: {
+        required: "Enter first name",
+        minlength: "At least 2 letters",
+        lettersOnly: "Only letters allowed",
+        noRepeatChars: "Enter Valied First Name"
+      },
+
+      lastname: {
+        required: "Enter last name",
+        minlength: "At least 2 letters",
+        lettersOnly: "Only letters allowed",
+        noRepeatChars: "Enter Valid Last Name"
+      },
+      phonenumber:{
+        noRepeatDigits: "Enter Valid Phone Number"
+      }
+    }
+
+  });
+
+});
+</script>
+{% endblock %}
