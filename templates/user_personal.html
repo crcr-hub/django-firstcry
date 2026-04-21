@@ -365,6 +365,7 @@ input.valid {
 
 
 $(function (){
+    
     $.validator.addMethod("lettersOnly", function(value, element){
         return this.optional(element) || /^[A-Za-z]+$/.test(value);
     }, "Only letters are allowed");

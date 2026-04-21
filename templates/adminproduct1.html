@@ -5,32 +5,20 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Purple Admin</title>
+    <title>FIrstCry Admin</title>
 
 
-
-    <link rel="stylesheet" href="{% static 'adminstyle2/vendors/mdi/css/materialdesignicons.min.css' %}">
-   
-    <!-- jQuery library -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- jQuery Cookie library -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
-<!-- endinject -->
-<!-- Plugin css for this page -->
-<!-- End plugin css for this page -->
-<!-- inject:css -->
-<!-- endinject -->
-<!-- Layout styles -->
-<link rel="stylesheet" href="{% static 'adminstyle2/css/style.css' %}">
-<!-- End layout styles -->
-<link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>FristCry Admin</title>
     <!-- plugins:css -->
+    <link rel="stylesheet" href="{% static 'adminstyle2/vendors/mdi/css/materialdesignicons.min.css' %}">
+    <link rel="stylesheet" href="{% static 'adminstyle2/vendors/css/vendor.bundle.base.css' %}">
 
-
-    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'adminstyle2/css/style.css' %}">
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
     
-
     <style>
 
     .popup {
@@ -90,7 +78,7 @@
   <body>
     <div class="container-scroller">
       <!-- partial:../../partials/_navbar.html -->
-     <nav class="navbar default-layout-navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+ <nav class="navbar default-layout-navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
         <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-center">
           <a class="navbar-brand brand-logo" href="index.html"><img src="{% static 'images/fc_logo.png' %}" alt="logo" /></a>
           <a class="navbar-brand brand-logo-mini" href="index.html"><img src="{% static 'images/fc_logo.png' %}" alt="logo" /></a>
@@ -282,11 +270,8 @@
                 
               </nav>
             </div>
-  <form  class="forms-sample" action="{% url 'addproduct' %}" method="post" enctype="multipart/form-data" >
+  <form id="addproduct" class="forms-sample" action="{% url 'addproduct' %}" method="post" enctype="multipart/form-data" >
                 {% csrf_token %}
-
-
-
             <div class="row">
               <div class="col-md-6 grid-margin stretch-card">
                 <div class="card">
@@ -324,13 +309,17 @@
 
                       <div class="form-group">
                         <label>Select Image</label>
-                        <input type="file" class="file-upload-default" name="image" id="select-image">
+                        <input type="file"  class="file-upload-default" name="image" id="select-image">
                         <div class="input-group col-xs-12">
                           <input type="text" class="form-control file-upload-info" disabled="" placeholder="Upload Image" >
                           <span class="input-group-append">
                             <button class="file-upload-browse btn btn-gradient-primary" type="button">Upload</button>
                           </span>
                         </div>
+                          <!-- Image Preview -->
+                      <div class="mt-3" >
+                        <img id="croppedPreview" style="max-width:200px; display:none; margin-top:10px; border-radius:10px;">
+                      </div>
                       </div>
                     
 
@@ -338,10 +327,7 @@
                         <label for="exampleTextarea1">Description</label>
                         <textarea class="form-control" id="desciption" rows="4" required name="desciption"></textarea>
                       </div>
-
-                     
-                      
-                     
+         
                   </div>
                 </div>
               </div>
@@ -394,10 +380,19 @@
                       </div>
                     </div>
                  
+                      <div class="form-group" id = "reload" >
+                
+                      <select class="form-control form-control-sm" id="colorSelect" onchange="updateColor()" name="color">
+                        <option value=""> Select a Color</option>
+                       
+                        {% for c in color %}
+                        <option  value="{{c.id}}"  data-id = "{{c.code}}">{{c.name}}</option>
+                        {% endfor %}
+                    </select> 
+                    </div>
 
-              
-
-
+                    <button style=" border: 0px; margin-left: 400px; margin-top: -150px;" id="addAddressBtn" type="button"  >Add a Color</button>
+                    <br>
                       <div class="form-group">
                         <label for="exampleInputUsername1">Price </label>
                         <input type="number" class="form-control" id="original-price" required oninput="calculateOfferPrice()" placeholder="price" name="price">
@@ -414,24 +409,11 @@
                         <label for="exampleInputUsername1">Offer Price </label>
                         <input type="hidden" name="csrfmiddlewaretoken" value="...">
                         <input type="text" class="form-control" id="offer-price" placeholder="Offer price" readonly name="offer">
-                      </div>
-
-                    
+                      </div>  
                   </div>
                 </div>
               </div>
-
-
-
-
-       
-
-
-
             </div>
-
-
-
 
             <div class="row">
               <div class="col-md-6 grid-margin stretch-card">
@@ -465,12 +447,6 @@
                         <label for="exampleInputUsername1">12 to 18 Months</label>
                         <input type="text" class="form-control" id="12to18" oninput="calculateTotalStock()" required placeholder="Number Of item" name="12to18">
                       </div>
-
-                      <div class="form-group">
-                        <label for="exampleInputUsername1">18 to 24 Months</label>
-                        <input type="text" class="form-control" id="18to24" oninput="calculateTotalStock()" required placeholder="Number Of item" name="18to24">
-                      </div>
-
   
                   </div>
                 </div>
@@ -478,6 +454,10 @@
               <div class="col-md-6 grid-margin stretch-card">
                 <div class="card">
                   <div class="card-body">
+                     <div class="form-group">
+                        <label for="exampleInputUsername1">18 to 24 Months</label>
+                        <input type="text" class="form-control" id="18to24" oninput="calculateTotalStock()" required placeholder="Number Of item" name="18to24">
+                      </div>
                     
                     <div class="form-group">
                       <label for="exampleInputUsername1">2 to 4 Years</label>
@@ -499,24 +479,11 @@
                       <input type="text" class="form-control" id="totalstock" placeholder="Total Stock" readonly name="total">
                     </div>
                    
-                    <div class="form-group" id = "reload" >
-                
-                      <select class="form-control form-control-sm" id="colorSelect" onchange="updateColor()" name="color">
-                        <option value=""> Select a Color</option>
-                       
-                        {% for c in color %}
-                        <option  value="{{c.id}}"  data-id = "{{c.code}}">{{c.name}}</option>
-                        {% endfor %}
-                    </select> 
-                    </div>
-
-                    <button style=" border: 0px; margin-left: 400px; margin-top: -150px;" id="addAddressBtn" type="button"  >Add a Color</button>
-                    <br>
+                   
 
 
 
-
-
+                    <!-- popup for adding new color -->
                     <div id="popup" class="popup">
                       <button type="button" onclick="closePopup()" style="border: none;">Close</button>
                       <br>
@@ -534,7 +501,7 @@
                         
                      </div>
                     </div>
-  <!--image croping div     -------------------------------------------        -->
+  <!--  popup div for adding new brand     -------------------------------------------        -->
                     <div id="imgcrop" class="imgcrop" >
                       <button type="button"  style="border: none;">Close</button>
                       <br>
@@ -581,13 +548,6 @@
                         
                      </div>
                     </div>
-
-
-
-
-
-
-
                       {% for message in messages %}
                       <h6 class="newh6" style="color: green">{{message}}</h6>
                       {% endfor %}
@@ -597,14 +557,6 @@
                   </div>
                 </div>
               </div>
-
-
-
-
-       
-
-
-
             </div>
 
 
@@ -626,23 +578,38 @@
     <!-- container-scroller -->
 
 
- 
 
-    <!-- custom js-->
+    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js" integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30=" crossorigin="anonymous"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+<script src="{% static 'adminstyle2/vendors/js/vendor.bundle.base.js' %}"></script>
 
- 
-    <!-- End custom js for this page -->
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+<script src="{% static 'adminstyle2/js/off-canvas.js' %}"></script>
+<script src="{% static 'adminstyle2/js/hoverable-collapse.js' %}"></script>
+<script src="{% static 'adminstyle2/js/misc.js' %}"></script>
+<!-- endinject -->
+<!-- Custom js for this page -->
+<script src="{% static 'adminstyle2/js/file-upload.js' %}"></script>
+<!-- End custom js for this page -->
+<script src="{% static 'js/add_color.js' %}"></script>
+<script src="{% static 'js/add_brand.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <!-- cropper -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropper/4.1.0/cropper.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropper/4.1.0/cropper.min.css">
+
+<!-- custom js-->
+
+<!-- jQuery Validation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
 
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
+integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
 
 
-
-
-
-
-
-
-    
+<script src="{% static 'js/croping-images/add-productnew.js' %}" ></script>
 <!-- For Automatically change color in select option-->
     <script>
       function updateColor() {
@@ -690,9 +657,7 @@
 
 
     </script>
-
-
-  
+ 
     
     <script>
         function calculateOfferPrice() {
@@ -707,6 +672,8 @@
             document.getElementById('offer-price').value = offerPrice.toFixed(2);
         }
     </script>
+
+    <!-- script for calculating total stock -->
     <script>
       function calculateTotalStock(){
         const ztothree = parseInt(document.getElementById('0to3').value) || 0;
@@ -726,15 +693,15 @@
 
     </script>
 
-
+<!-- Script for changing the types based pants or tops while select category  -->
 <script>
-  function initializeCart() {
+  
   $(document).ready(function() {
     $('#mySelect').change(function() {
         var selectedValue = $(this).val();
         var hidediv1 = document.getElementById("forchange1")
         var hidediv2 = document.getElementById("forchange2")
-        console.log(selectedValue)
+        console.log("values",selectedValue)
        
           $.ajax({
             url: "{% url 'change_for_types' %}",
@@ -743,8 +710,6 @@
             },
             dataType: 'json',
             success: function(data) {
-                
-              console.log("thishshhs",data)
                 if (data.res == '1'){
                   (console.log("ok"))
                   hidediv1.style.display = "block"
@@ -765,45 +730,93 @@
         });  
     });
 });
-  }
-  initializeCart();
+  
+
 </script>
 
 
+<!-- Validation  -->
+<script>
+ $(document).ready(function () {
+
+    $("#addproduct").validate({
+
+        rules: {
+            categ: {
+                required: true
+            },
+            pname: {
+                required: true,
+                minlength: 3
+            },
+            brand: {
+                required: true
+            },
+            image: {
+                required: true
+            },
+            desciption: {
+                required: true,
+                minlength: 10
+            },
+            price: {
+                required: true,
+                number: true,
+                min: 1
+            },
+            deal: {
+                required: true,
+                number: true,
+                min: 0,
+                max: 100
+            },
+            neck: {
+                required: true
+            },
+            sleeve: {
+                required: true
+            },
+            length: {
+                required: true
+            },
+            waist: {
+                number: true
+            },
+            total: {
+                required: true,
+                number: true
+            }
+        },
+
+        messages: {
+            categ: "Please select a category",
+            pname: "Enter product name (min 3 characters)",
+            brand: "Select a brand",
+            image: "Upload an image",
+            desciption: "Enter at least 10 characters",
+            price: "Enter valid price",
+            deal: "Enter discount between 0–100",
+            total: "Stock is required"
+        },
+
+        errorElement: "span",
+        errorClass: "text-danger",
+
+        highlight: function (element) {
+            $(element).addClass("is-invalid");
+        },
+
+        unhighlight: function (element) {
+            $(element).removeClass("is-invalid");
+        }
+
+    });
+
+});
+
+</script>
 
 
-
-
-
-<script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
-<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js" integrity="sha256-T0Vest3yCU7pafRw9r+settMBX6JkKN06dqBnpQ8d30=" crossorigin="anonymous"></script>
-<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
-<script src="{% static 'adminstyle2/vendors/js/vendor.bundle.base.js' %}"></script>
-<!-- endinject -->
-<!-- Plugin js for this page -->
-<!-- End plugin js for this page -->
-<!-- inject:js -->
-<script src="//cdn.jsdelivr.net/npm/sweetalert2@10"></script>
-<script src="{% static 'adminstyle2/js/off-canvas.js' %}"></script>
-<script src="{% static 'adminstyle2/js/hoverable-collapse.js' %}"></script>
-<script src="{% static 'adminstyle2/js/misc.js' %}"></script>
-<!-- endinject -->
-<!-- Custom js for this page -->
-<script src="{% static 'adminstyle2/js/file-upload.js' %}"></script>
-<!-- End custom js for this page -->
-<script src="{% static 'js/add_color.js' %}"></script>
-<script src="{% static 'js/add_brand.js' %}"></script>
-<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-  <!-- cropper -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropper/4.1.0/cropper.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropper/4.1.0/cropper.min.css">
-
-<!-- custom js-->
-<script src="{% static 'js/croping-images/add-product.js' %}" ></script>
-
-
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
-integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
 
   </body>
 </html>

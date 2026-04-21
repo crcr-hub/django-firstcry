@@ -793,8 +793,6 @@ def update_category(request,pk):
         instance.gender = request.POST.get('gender')
         if 'image' in request.FILES:
             instance.image = request.FILES['image']
-        
-
         instance.save()
         return redirect(view_category)
     return redirect(user_login)
@@ -867,8 +865,8 @@ def add_product(request):
             prod.varient = vobj 
             prod.save()
             return JsonResponse({'successs':'success'})
-            messages.info(request,'Added Successfully')
-            return redirect(product)
+            # messages.info(request,'Added Successfully')
+            # return redirect(product)
     return redirect(user_login)
 
 
