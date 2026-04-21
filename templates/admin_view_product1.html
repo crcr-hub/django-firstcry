@@ -9,14 +9,7 @@
     <!-- plugins:css -->
     <link rel="stylesheet" href="{% static 'adminstyle2/vendors/mdi/css/materialdesignicons.min.css' %}">
     <link rel="stylesheet" href="{% static 'adminstyle2/vendors/css/vendor.bundle.base.css' %}">
-    <!-- endinject -->
-    <!-- Plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
-    <!-- endinject -->
-    <!-- Layout styles -->
     <link rel="stylesheet" href="{% static 'adminstyle2/css/style.css' %}">
-    <!-- End layout styles -->
     <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
 
 
@@ -232,19 +225,18 @@
 
                             <th   style="position: sticky; top: 0px;" >Product ID</th>
                             <th   style="position: sticky; top: 0px;">Product</th>
+                            <th  style="position: sticky; top: 0px;"> Brand</th>
                             <th  style="position: sticky; top: 0px;">category</th>
                             <th  style="position: sticky; top: 0px;" >Description</th>
                             <th  style="position: sticky; top: 0px;"> Neck Type</th>
                             <th  style="position: sticky; top: 0px;"> Sleeve Type</th>
+                            <th  style="position: sticky; top: 0px;"> Length</th>
                             <th  style="position: sticky; top: 0px;">Price</th>
                             <th  style="position: sticky; top: 0px;">Offer Price</th>
                             <th  style="position: sticky; top: 0px;">Gender for Product</th>
-                         
                             <th  style="position: sticky; top: 0px;">Date</th>
-                            <th  style="position: sticky; top: 0px;">Stock</th>
                             <th  style="position: sticky; top: 0px;">image</th>
                             <th  style="position: sticky; top: 0px;">Stock</th>
-
                             <th  style="position: sticky; top: 0px;">Action</th>
                          
                         </tr>
@@ -254,12 +246,14 @@
                         <tr class="table-info">
                             <th>{{x.id}}</th>
                             <td>{{x.name}}</td>
+                            <td>{{x.brand.name}}</td>
                           
                             <td>{{x.category.titile}}</td>
                        
                             <td style="width: 50px; height: 100px; word-wrap: break-word;">{{x.description}}</td>
                             <td>{{x.necktype}}</td>
                             <td>{{x.sleevetype}}</td>
+                            <td>{{x.length}}</td>
                             <td>{{x.price}}</td>
                             <td>{{x.Offer_price}}</td>
                             
@@ -268,7 +262,7 @@
                             </td>
                          
                             <td>{{x.date}}</td>
-                            <td>{{x.qnty}}</td>
+                  
                             <td>
                                 {% if x.image %}
                                 <img src="{{x.image}}" style="width: 50px; height: 50px;" alt="">
@@ -277,7 +271,7 @@
                             </td>
                         
                             <td>{{x.varient.total}} <br>
-                              <a href="{% url 'view_varient' x.id %}" id="details">Full Details</a>
+                              <a href="{% url 'view_varient' x.id %}" id="details">Stock Details</a>
                             </td>
 
                           <td style="width: 50px;">
