@@ -5,18 +5,13 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Purple Admin</title>
+    <title>FirstCry</title>
     <!-- plugins:css -->
     <link rel="stylesheet" href="{% static 'adminstyle2/vendors/mdi/css/materialdesignicons.min.css' %}">
     <link rel="stylesheet" href="{% static 'adminstyle2/vendors/css/vendor.bundle.base.css' %}">
-    <!-- endinject -->
-    <!-- Plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
-    <!-- endinject -->
-    <!-- Layout styles -->
+
     <link rel="stylesheet" href="{% static 'adminstyle2/css/style.css' %}">
-    <!-- End layout styles -->
+   
     <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
   </head>
   <body>
@@ -214,13 +209,6 @@
              
             </div>
             <div class="row">
-             
-
-
-
-
-
-
               <div class="col-lg-12 stretch-card">
                 <div class="card">
                   <div class="card-body">
@@ -259,7 +247,10 @@
                             <td>{{details.varient.fourtosixY}}</td>
                             <td>{{details.varient.sixtoeightY}}</td>
                             <td>{{details.varient.total}}</td>
-                            <td>{{details.varient.colors.name}}</td>
+                           
+                           <td style="background-color: {{ details.varient.colors.code }};">
+                              {{ details.varient.colors.name }}
+                              </td> 
                             </tr>
                            
                       </tbody>
@@ -291,18 +282,11 @@
       </div>
       <!-- page-body-wrapper ends -->
     </div>
-    <!-- container-scroller -->
-    <!-- plugins:js -->
+   
     <script src="{% static 'adminstyle2/vendors/js/vendor.bundle.base.js' %}"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
-    <!-- End plugin js for this page -->
-    <!-- inject:js -->
     <script src="{% static 'adminstyle2/js/off-canvas.js' %}"></script>
     <script src="{% static 'adminstyle2/js/hoverable-collapse.js' %}"></script>
     <script src="{% static 'adminstyle2/js/misc.js' %}"></script>
-    <!-- endinject -->
-    <!-- Custom js for this page -->
-    <!-- End custom js for this page -->
+  
   </body>
 </html>

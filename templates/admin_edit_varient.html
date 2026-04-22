@@ -5,18 +5,13 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Purple Admin</title>
+    <title>FirstCry</title>
     <!-- plugins:css -->
     <link rel="stylesheet" href="{% static 'adminstyle2/vendors/mdi/css/materialdesignicons.min.css' %}">
     <link rel="stylesheet" href="{% static 'adminstyle2/vendors/css/vendor.bundle.base.css' %}">
-    <!-- endinject -->
-    <!-- Plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
-    <!-- endinject -->
-    <!-- Layout styles -->
+   
     <link rel="stylesheet" href="{% static 'adminstyle2/css/style.css' %}">
-    <!-- End layout styles -->
+   
     <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
   </head>
   <body>
@@ -268,7 +263,7 @@
                          
                             <div class="form-group" id = "reload" style="margin-top: 10px;">
                 
-                              <select class="form-control form-control-sm" id="colorSelect"  name="color">
+                              <select style="background-color: {{details.varient.colors.code}};" class="form-control form-control-sm" id="colorSelect"  name="color">
                                 <option value="{{details.varient.colors.id}}"  data-id = "{{details.varient.colors.code}}"> {{details.varient.colors.name}}</option>
                                
                                 {% for c in color %}
@@ -309,17 +304,11 @@
     <!-- container-scroller -->
     <!-- plugins:js -->
     <script src="{% static 'adminstyle2/vendors/js/vendor.bundle.base.js' %}"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
-    <!-- End plugin js for this page -->
-    <!-- inject:js -->
+    
     <script src="{% static 'adminstyle2/js/off-canvas.js' %}"></script>
     <script src="{% static 'adminstyle2/js/hoverable-collapse.js' %}"></script>
     <script src="{% static 'adminstyle2/js/misc.js' %}"></script>
-    <!-- endinject -->
-    <!-- Custom js for this page -->
-    <!-- End custom js for this page -->
-
+   
     <script>
       function calculateTotalStock(){
         const ztothree = parseInt(document.getElementById('0to3').value) || 0;

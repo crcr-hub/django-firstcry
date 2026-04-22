@@ -5,16 +5,11 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Purple Admin</title>
-    <!-- plugins:css -->
+    <title>FirstCry</title>
+
     <link rel="stylesheet" href="{% static 'adminstyle2/vendors/mdi/css/materialdesignicons.min.css' %}">
     <link rel="stylesheet" href="{% static 'adminstyle2/vendors/css/vendor.bundle.base.css' %}">
-    <!-- endinject -->
-    <!-- Plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
-    <!-- endinject -->
-    <!-- Layout styles -->
+
     <link rel="stylesheet" href="{% static 'adminstyle2/css/style.css' %}">
     <!-- End layout styles -->
     <link rel="shortcut icon" href="{% static 'adminstyle2/images/favicon.ico' %}" />
@@ -242,28 +237,20 @@
                 <div class="card">
                   <div class="card-body">
                     <h4 class="card-title">Update Your Product</h4>
-                  
-        
-                   
                         <div class="form-group">
                         <label for="exampleInputUsername1">Name of the product</label>
                         <input type="text" class="form-control" id="exampleInputUsername1" placeholder="name" name="name" value="{{details.name}}">
                       </div>
 
-
-
                       <div class="form-group">
                         <label for="exampleFormControlSelect3">Select a category</label>
                         <select class="form-control form-control-sm" id="exampleFormControlSelect3" name="categ">
-                          <option selected value="{{details.category.id}}">{{details.category.titile}}</option>
+                          <option selected value="{{details.category.id}}">{{details.category.titile}} for {{details.category.gender}}</option>
                             {% for x in context%}
-                            <option value="{{x.id}}">{{x.titile}}</option>
+                            <option value="{{x.id}}">{{x.titile}} for {{x.gender}}</option>
                             {% endfor %}
                         </select>
                       </div>
-              
-                   
-                     
                
                       <div class="form-group">
                         <label>Select Image</label>
@@ -288,13 +275,21 @@
                       <div class="form-group">
                         <label for="exampleTextarea1">Description</label>
                         <textarea class="form-control" id="exampleTextarea1" rows="4" name="description">{{details.description}}</textarea>
-                      </div>
-                     
+                      </div>  
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    
+         {% if details.necktype %}
                       <div class="form-group">
                         <label for="exampleFormControlSelect3">Neck Type</label>
                         <select class="form-control form-control-sm" id="exampleFormControlSelect3" name="necktype">
                       
-                            <option  selected="{{details.necktype}}"  value="Rounded Neck">Rounded Neck</option>
+                            <option  selected="{{details.necktype}}"  value="{{details.necktype}}">{{details.necktype}}</option>
+                            <option value="Collar Neck">Rounded Neck</option>
                             <option value="Collar Neck">Collar Neck</option>
                             <option value="V Type">V Neck</option>
                           
@@ -312,34 +307,26 @@
                         </select>
                       </div>
                       {%endif%}
-
-
-                     
-                     
+                    {%else%}
+                         <div class="form-group">
+                        <label for="exampleFormControlSelect3">Length</label>
+                        <select class="form-control form-control-sm" id="exampleFormControlSelect3" name="necktype">
                       
-                     
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    
-        
-                    <div class="form-group">
-                        <label for="exampleFormControlSelect3">Select Gender</label>
-                        <select class="form-control form-control-sm" id="exampleFormControlSelect3" name="gender">
-                            <option value="{{details.gender}}">{{details.gender}}</option>
-                            <option value="Boys">Boys</option>
-                            <option value="Girls">Girls</option>
-                            <option value="Unisex">Unisex</option>
-                          
+                            <option  selected="{{details.length}}"  value="{{details.length}}">{{details.length}}</option>
+                            <option value="Full Length">Full Length</option>
+                            <option value="Ankle Length">Ankle Length</option>
+                            <option value="Knee Length">Knee Length</option>
+                            <option value="Shorts">Shorts</option>
+                            <option value="Above Knee">Above Knee Length</option>
                         </select>
                       </div>
+                    {% endif %}
+
+                  
 
                       <div class="form-group">
-                        <label for="exampleInputUsername1">Stock</label>
-                        <input type="text" class="form-control" id="exampleInputUsername1" placeholder="name" name="qnty" value="{{details.qnty}}">
+                        <label for="exampleInputUsername1">Total Stock</label>
+                        <input type="text" class="form-control" id="exampleInputUsername1" placeholder="name" name="qnty" value="{{details.varient.total}}" readonly>
                       </div>
 
 
@@ -364,21 +351,13 @@
 
                        
                       <button type="submit" name="update"  class="btn btn-gradient-primary me-2">UPDATE</button>
-                      <button type="submit" name="stock"  class="btn btn-gradient-primary me-2">Edit Stock Details</button>
-                     
-                  
+                      <a href="{% url 'view_varient' details.id %}"  class="btn btn-gradient-primary me-2">
+                        Edit Stock Details</a>
+                      <button type="submit" name="stock"  class="btn btn-gradient-primary me-2">Go Back</button>
             
                   </div>
                 </div>
-               
-      
                 {% csrf_token %}
-         
-
-             
-       
-
-
 
             </div>
         </form>
@@ -399,18 +378,13 @@
       </div>
       <!-- page-body-wrapper ends -->
     </div>
-    <!-- container-scroller -->
-    <!-- plugins:js -->
+
     <script src="{% static 'adminstyle2/vendors/js/vendor.bundle.base.js' %}"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
-    <!-- End plugin js for this page -->
-    <!-- inject:js -->
+    
     <script src="{% static 'adminstyle2/js/off-canvas.js' %}"></script>
     <script src="{% static 'adminstyle2/js/hoverable-collapse.js' %}"></script>
     <script src="{% static 'adminstyle2/js/misc.js' %}"></script>
-    <!-- endinject -->
-    <!-- Custom js for this page -->
+    
     <script src="{% static 'adminstyle2/js/file-upload.js' %}"></script>
     <!-- End custom js for this page -->
 
